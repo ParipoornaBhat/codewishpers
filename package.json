@@ -7,7 +7,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "scripts": {
-    "build": "next build",
+    "build": "next build --no-lint",
     "build:ci": "next build --no-lint",
     "check": "next lint && tsc --noEmit",
     "db:generate": "prisma migrate dev",
