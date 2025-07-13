@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/_components/ui/tabs"
-import { Button } from "@/app/_components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
 import { Plus, Play, Save, Download } from "lucide-react"
-import WorksheetCanvas from "@/app/_components/worksheet-canvas"
-import FunctionLibrary from "@/app/_components/function-library"
-import TestPanel from "@/app/_components/test-panel"
+import WorksheetCanvas from "@/components/worksheet-canvas"
+import FunctionLibrary from "@/components/function-library"
+import TestPanel from "@/components/test-panel"
 
 interface Worksheet {
   id: string
@@ -72,13 +72,13 @@ export default function CodeWhispersApp() {
   const currentWorksheet = worksheets.find((ws) => ws.id === activeWorksheet)
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-950">
+    <div className="h-[calc(100vh-100px)] sm:h-[calc(100vh-80px)] lg:h-[calc(100vh-64px)] flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-950">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              codeWhispers Round 2
+              CodeWhispers Round 2
             </h1>
             <div className="text-sm text-muted-foreground">Visual Function Chaining Challenge</div>
           </div>
@@ -87,23 +87,17 @@ export default function CodeWhispersApp() {
               <Play className="w-4 h-4 mr-2" />
               Test Functions
             </Button>
-            <Button variant="outline" size="sm">
-              <Save className="w-4 h-4 mr-2" />
-              Save
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
+            
           </div>
         </div>
       </div>
 
       <div className="flex-1 flex">
         {/* Function Library Sidebar */}
-        <div className="w-80 bg-white dark:bg-gray-800 border-r dark:border-gray-700 shadow-sm">
-          <FunctionLibrary />
-        </div>
+       <div className="w-80 h-[calc(100vh-130px)] overflow-y-auto bg-white dark:bg-gray-800 border-r dark:border-gray-700 shadow-sm">
+  <FunctionLibrary />
+</div>
+
 
         {/* Main Canvas Area */}
         <div className="flex-1 flex flex-col">
@@ -143,7 +137,7 @@ export default function CodeWhispersApp() {
 
         {/* Test Panel */}
         {showTestPanel && (
-          <div className="w-96 bg-white dark:bg-gray-800 border-l dark:border-gray-700 shadow-sm">
+          <div className="w-96 h-[calc(100vh-130px)] bg-white dark:bg-gray-800 border-l dark:border-gray-700 shadow-sm">
             <TestPanel worksheet={currentWorksheet} onClose={() => setShowTestPanel(false)} />
           </div>
         )}
