@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Plus, Play, Save, Download } from "lucide-react"
 import WorksheetCanvas from "@/components/worksheet-canvas"
 import FunctionLibrary from "@/components/function-library"
 import TestPanel from "@/components/test-panel"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 interface Worksheet {
   id: string
@@ -16,29 +18,66 @@ interface Worksheet {
 }
 
 export default function CodeWhispersApp() {
-  const [worksheets, setWorksheets] = useState<Worksheet[]>([
-    {
-      id: "1",
-      name: "Worksheet 1",
+  const [autoSave, setAutoSave] = useState(true)
+
+  const [worksheets, setWorksheets] = useState<Worksheet[]>([])
+
+  const [activeWorksheet, setActiveWorksheet] = useState<string | null>(null)
+  const [showTestPanel, setShowTestPanel] = useState(false)
+  
+  const extractWorksheetsFromLocalStorage = (): Worksheet[] => {
+  const result: Worksheet[] = []
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key?.startsWith("worksheet-")) {
+      const id = key.replace("worksheet-", "")
+      result.push({
+        id,
+        name: `Worksheet ${id}`,
+        nodes: [],
+        edges: [],
+      })
+    }
+  }
+
+  return result.sort((a, b) => Number(a.id) - Number(b.id))
+}
+useEffect(() => {
+  const saved = extractWorksheetsFromLocalStorage()
+
+  if (saved.length > 0) {
+    setWorksheets(saved)
+    if (saved[0]) {
+      setActiveWorksheet(saved[0].id)
+    }
+  } else {
+    // Create default one
+    const newId = "1";
+    const defaultWorksheet = {
+      id: newId,
+      name: `Worksheet ${newId}`,
       nodes: [
         {
-          id: "input-1",
+          id: `input-${newId}`,
           type: "input",
           position: { x: 100, y: 200 },
           data: { label: "Input", value: "" },
         },
         {
-          id: "output-1",
+          id: `output-${newId}`,
           type: "output",
           position: { x: 800, y: 200 },
           data: { label: "Output", value: null },
         },
       ],
       edges: [],
-    },
-  ])
-  const [activeWorksheet, setActiveWorksheet] = useState("1")
-  const [showTestPanel, setShowTestPanel] = useState(false)
+    }
+    setWorksheets([defaultWorksheet])
+    setActiveWorksheet(newId)
+  }
+}, [])
+
 
   const addWorksheet = () => {
     const newId = (worksheets.length + 1).toString()
@@ -87,7 +126,16 @@ export default function CodeWhispersApp() {
               <Play className="w-4 h-4 mr-2" />
               Test Functions
             </Button>
-            
+          <div className="flex items-center gap-2 px-3 py-1 bg-white dark:bg-gray-700 rounded-md shadow-md">
+            <Label htmlFor="autosave-switch" className="text-sm text-gray-700 dark:text-gray-200">
+              Auto-Save
+            </Label>
+            <Switch
+              id="autosave-switch"
+              checked={autoSave}
+              onCheckedChange={setAutoSave}
+            />
+          </div>
           </div>
         </div>
       </div>
@@ -95,13 +143,14 @@ export default function CodeWhispersApp() {
       <div className="flex-1 flex">
         {/* Function Library Sidebar */}
        <div className="w-80 h-[calc(100vh-130px)] overflow-y-auto bg-white dark:bg-gray-800 border-r dark:border-gray-700 shadow-sm">
-  <FunctionLibrary />
-</div>
+        <FunctionLibrary />
+      </div>
 
 
         {/* Main Canvas Area */}
         <div className="flex-1 flex flex-col">
           {/* Worksheet Tabs */}
+          {activeWorksheet && (
           <Tabs value={activeWorksheet} onValueChange={setActiveWorksheet} className="flex-1 flex flex-col">
             <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-4 py-2">
               <div className="flex items-center gap-2">
@@ -128,13 +177,14 @@ export default function CodeWhispersApp() {
                     initialNodes={worksheet.nodes}
                     initialEdges={worksheet.edges}
                     onUpdate={updateWorksheet}
+                    autoSave={autoSave}
                   />
                 </TabsContent>
               ))}
             </div>
           </Tabs>
+          )}
         </div>
-
         {/* Test Panel */}
         {showTestPanel && (
           <div className="w-96 h-[calc(100vh-130px)] bg-white dark:bg-gray-800 border-l dark:border-gray-700 shadow-sm">
