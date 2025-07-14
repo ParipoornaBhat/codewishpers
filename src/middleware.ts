@@ -1,47 +1,32 @@
+// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { env } from "./env";
-
-// Utility to set a flash message in a cookie
-const setFlashError = (res: NextResponse, message: string) => {
-  res.cookies.set("flash_error", message, {
-    maxAge: 5, // 5 seconds
-    path: "/",
-    httpOnly: false,
-  });
-};
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
- const token = await getToken({
+  const token = await getToken({
     req: request,
-    secret: env.AUTH_SECRET,
-    // @ts-expect-error This is needed in middleware runtime (Edge)
+    secret: process.env.NEXTAUTH_SECRET,
+    // @ts-expect-error trustHost is supported on edge
     trustHost: true,
   });
+
   console.log("Middleware token:", token);
-  console.log("Cookies available in middleware:", request.cookies.getAll());
-  console.log("ENV.AUTH_SECRET:", env.AUTH_SECRET);
-  console.log("ENV.NEXTAUTH_SECRET:", env.NEXTAUTH_SECRET);
-  console.log("ENV.NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET);
-  console.log("ENV.NEXTAUTH_URL:", env.NEXTAUTH_URL);
-  // Redirect /auth and /auth/login to /auth/signin
-  if (pathname === "/auth" || pathname === "/auth/login") {
-    return NextResponse.redirect(new URL("/auth/signin", request.url));
-  }
 
-  // If logged in, block access to /auth/signin
+  const { pathname } = request.nextUrl;
+
+  // Redirect already signed-in user from /auth/signin to home
   if (token && pathname === "/auth/signin") {
-    const res = NextResponse.redirect(new URL("/", request.url));
-    setFlashError(res, "You are already logged in.");
-    return res;
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // If not logged in, block access to /play
+  // Protect /play route
   if (!token && pathname === "/play") {
     const res = NextResponse.redirect(new URL("/auth/signin", request.url));
-    setFlashError(res, "Please login to access this page.");
+    res.cookies.set("flash_error", "Please login to access this page.", {
+      maxAge: 5,
+      path: "/",
+    });
     return res;
   }
 
