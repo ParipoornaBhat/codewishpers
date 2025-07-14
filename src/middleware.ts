@@ -14,7 +14,7 @@ const setFlashError = (res: NextResponse, message: string) => {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = await getToken({ req: request, secret: env.AUTH_SECRET });
+  const token = await getToken({ req: request, secret: env.AUTH_SECRET,cookieName:"next-auth.session-token" });
     console.log("Middleware token:", token);
     console.log("Cookies:",request.cookies.getAll());
     console.log("env.AUTH_SECRET:", env.AUTH_SECRET);

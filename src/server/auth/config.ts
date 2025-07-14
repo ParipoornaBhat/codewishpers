@@ -72,4 +72,17 @@ export const authConfig: NextAuthConfig = {
   pages: {
     signIn: "/auth/signin", // your custom team login page
   },
-};
+  cookies:{
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: true,
+        path: "/",
+      },
+
+    }
+  },
+  trustHost:true,
+}
