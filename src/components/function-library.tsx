@@ -98,7 +98,7 @@ export default function FunctionLibrary() {
                           {func.category}
                         </Badge>
                       </div>
-                      <div className="text-xs text-gray-500">{func.inputTypes.length} input(s)</div>
+                      <div className="text-xs text-gray-500">{func.numInputs} input(s)</div>
                     </div>
                   </div>
                 </CardContent>
