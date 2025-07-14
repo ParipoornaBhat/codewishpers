@@ -16,6 +16,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = await getToken({ req: request, secret: env.AUTH_SECRET });
   console.log("Middleware token:", token);
+  console.log("Cookies available in middleware:", request.cookies.getAll());
   console.log("ENV.AUTH_SECRET:", env.AUTH_SECRET);
   // Redirect /auth and /auth/login to /auth/signin
   if (pathname === "/auth" || pathname === "/auth/login") {
