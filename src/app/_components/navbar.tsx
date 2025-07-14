@@ -72,7 +72,7 @@ const [open, setOpen] = useState(false);
        <Link href="/" className="text-2xl font-bold text-purple-600 dark:text-purple-400">
       <Image
         src={logoSrc}
-        alt="Dynamic Packaging Logo"
+        alt="FLCLogo"
         width={180}
         height={32}
         priority  
@@ -194,12 +194,12 @@ const [open, setOpen] = useState(false);
   <Link href="/" onClick={handleClose} className="flex items-center gap-2 text-lg font-semibold">
       <Image
         src={logoSrc}
-        alt="Dynamic Packaging Logo"
+        alt="FLC Logo"
         width={180}
         height={32}
         className="h-10 sm:h-10 md:h-12 w-auto transition-all duration-300"
       />
-    <span className="sr-only">Dynamic Packaging</span>
+    <span className="sr-only">FLC Packaging</span>
   </Link>
 
   <Link href="/" onClick={handleClose}  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
