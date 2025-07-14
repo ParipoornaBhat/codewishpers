@@ -23,6 +23,9 @@ export async function middleware(request: NextRequest) {
   console.log("Middleware token:", token);
   console.log("Cookies available in middleware:", request.cookies.getAll());
   console.log("ENV.AUTH_SECRET:", env.AUTH_SECRET);
+  console.log("ENV.NEXTAUTH_SECRET:", env.NEXTAUTH_SECRET);
+  console.log("ENV.NEXTAUTH_SECRET:", process.env.NEXTAUTH_SECRET);
+  console.log("ENV.NEXTAUTH_URL:", env.NEXTAUTH_URL);
   // Redirect /auth and /auth/login to /auth/signin
   if (pathname === "/auth" || pathname === "/auth/login") {
     return NextResponse.redirect(new URL("/auth/signin", request.url));
