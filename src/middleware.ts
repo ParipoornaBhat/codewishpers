@@ -14,7 +14,12 @@ const setFlashError = (res: NextResponse, message: string) => {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = await getToken({ req: request, secret: env.AUTH_SECRET });
+ const token = await getToken({
+    req: request,
+    secret: env.AUTH_SECRET,
+    // @ts-expect-error This is needed in middleware runtime (Edge)
+    trustHost: true,
+  });
   console.log("Middleware token:", token);
   console.log("Cookies available in middleware:", request.cookies.getAll());
   console.log("ENV.AUTH_SECRET:", env.AUTH_SECRET);
