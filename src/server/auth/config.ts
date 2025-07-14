@@ -70,6 +70,6 @@ export const authConfig: NextAuthConfig = {
     },
   },
   pages: {
-    signIn: "/team-login", // your custom team login page
+    signIn: "/auth/signin", // your custom team login page
   },
 };

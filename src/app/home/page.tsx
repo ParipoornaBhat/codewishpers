@@ -63,8 +63,7 @@ export default function HomePage() {
   const { theme, resolvedTheme } = useTheme();
 
   useEffect(() => {
-    console.log("Theme:", theme);
-    console.log("Resolved theme:", resolvedTheme);
+    
   }, [theme, resolvedTheme]);
 
   return (
