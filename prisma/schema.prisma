@@ -1,471 +1,74 @@
-// Prisma Schema for Job Management System
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+    // Further reading:
+    // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+    // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+    url      = env("DATABASE_URL")
 }
 
+model Post {
+    id        Int      @id @default(autoincrement())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
+    createdBy   User   @relation(fields: [createdById], references: [id])
+    createdById String
 
-// ===================
-// MODELS
-// ===================
-model FormField {
-  name     String   @id           // Acts as both unique name and ID
-  options  String[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    @@index([name])
 }
 
-
+// Necessary for Next auth
 model Account {
-  id                       String   @id @default(cuid())
-  userId                   String
-  type                     String
-  provider                 String
-  providerAccountId        String
-  refresh_token            String?
-  access_token             String?
-  expires_at               Int?
-  token_type               String?
-  scope                    String?
-  id_token                 String?
-  session_state            String?
-  refresh_token_expires_in Int?
+    id                       String  @id @default(cuid())
+    userId                   String
+    type                     String
+    provider                 String
+    providerAccountId        String
+    refresh_token            String? // @db.Text
+    access_token             String? // @db.Text
+    expires_at               Int?
+    token_type               String?
+    scope                    String?
+    id_token                 String? // @db.Text
+    session_state            String?
+    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    refresh_token_expires_in Int?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
+    @@unique([provider, providerAccountId])
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-model Notification {
-  id        String   @id @default(cuid())
-  message   String
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-}
-model Customer {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
-
-  companyBilling String[]   @default([])
-  brands         String[]   @default([])
-  addresses      String[]   @default([])
-
-  totalItemsBOPP Int @default(0)
-  totalItemsPET  Int @default(0)
-
-  BOPPItems      BOPPItem[] @relation("UserBOPPItems")
-  PETItems       PETItem[]  @relation("UserPETItems")
-  BOPPOrders     BOPPOrder[]  @relation("UserBOPPOrders")
-  PETOrders      PETOrder[] @relation("UserPETOrders")
-  completedBOPPOrders CompletedBOPPOrder[]  @relation("UserCompletedBOPPOrders")
-  completedPETOrders  CompletedPETOrder[] @relation("UserCompletedPETOrders")
-
-
-  
-}
-model Employee {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
-
-  roleId    String
-  role      Role     @relation(fields: [roleId], references: [id])
-
-  assignedBOPPSubJobs BOPPSubJob[] @relation("UserAssignedBOPPSubJobs")   
-  assignedPETSubJobs  PETSubJob[]  @relation("UserAssignedPETSubJobs") 
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  phone     String   @unique
-  password  String?
-  image     String?
-  type      UserType @default(CUSTOMER) // Enum: CUSTOMER or EMPLOYEE
-
-  notifications          Notification[]
-
-  msgEmail       Boolean @default(false)
-  msgWhatsapp    Boolean @default(false)
-  msgWeb    Boolean @default(false)
-
-   passwordResetTokens    PasswordResetToken[] // relation
-  sessions  Session[]
-  accounts  Account[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  customer  Customer?
-  employee  Employee?
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    image         String?
+    accounts      Account[]
+    sessions      Session[]
+    posts         Post[]
 }
 
-
-model Dept {
-  id           String @id @default(cuid())
-  name         String @unique // Short name (e.g., ADM, HR, AGT, etc.)
-  fullName     String
-  memberCount  Int    @default(0)
-
-  roles        Role[] @relation("DeptRoles")
-  boppJobs     BOPPJob[] @relation("DeptBOPPJobs")
-  petJobs      PETJob[] @relation("DeptPETJobs")
-}
-
-model Role {
-  id           String           @id @default(cuid())
-  name         String
-  deptId       String
-  dept         Dept             @relation("DeptRoles", fields: [deptId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  users        Employee[]
-  permissions  RolePermission[]
-
-  @@unique([name, deptId])
-}
-
-model Permission {
-  id    String           @id @default(cuid())
-  name  String           @unique
-  roles RolePermission[]
-}
-
-model RolePermission {
-  id           String @id @default(cuid())
-  roleId       String
-  permissionId String
-
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-  @@unique([roleId, permissionId])
-}
-
-// BOPP & PET Items
-enum YN {
-  YES
-  NO
-}
-
-model BOPPItem {
-  id          String @id @default(cuid())
-  name        String
-
-  banner  String? // Banner for image
-  type       String @default("BOPP") // Static type for BOPP items
-  description String?
-  billingName String? // Name used for billing purposes
-  brand       String? // Brand of the item
-  address     String? // Address associated with the item
-  GMS String? // Package Capacity
-
-  printingCheck Boolean @default(false) // Whether printing check is required
-  inspection1Check Boolean @default(false) // Whether inspection check is required
-  laminationCheck Boolean @default(false) // Whether lamination check is required
-  inspection2Check Boolean @default(false) // Whether inspection check is required
-  slittingCheck Boolean @default(false) // Whether slitting check is required
-  fabricLaminationCheck Boolean @default(false) // Whether fabric lamination check is required
-  cuttingAndStitchingCheck Boolean @default(false) // Whether cutting and stitching check is required
-
-  printing_SizexMic String? // Size for printing
-  printing_MaterialType String? // Material type for printing
-  printing_Cylinder String? // Cylinder for printing
-  printing_CylinderDirection String? // Cylinder Direction for printing
-  printing_NoOfColours Int? // Number of colors for printing
-  printing_Colours String? // Colors used for printing
-  printing_Remarks String? // Remarks for printing
-
-  inspection1_Remarks String? // Remarks for inspection 1
-
-  lamination_SizexMic String? // Size for lamination
-  lamination_Type String? // Material type for lamination
-  lamination_Remarks String? // Remarks for lamination
-
-  inspection2_Remarks String? // Remarks for inspection 2
-
-  slitting_Remarks String? // Remarks for slitting
-
-  fabricLamination_Size String? // Size for fabric lamination
-  fabricLamination_MaterialType String? // Material type for fabric lamination
-  fabricLamination_Sides String? // Sides for fabric lamination
-  fabricLamination_Trimming YN? // Thickness for fabric lamination
-  fabricLamination_Remarks String? // Remarks for fabric lamination
-
-  cuttingAndStitching_Type String? // type reguler/gusset
-  cuttingAndStitching_Stitching YN? // Whether stitching is required
-  cuttingAndStitching_Perforation YN? // Whether perforation is required
-  cuttingAndStitching_ThreadColour String? // Thread color 
-  cuttingAndStitching_HandleType String? // Handle type
-  cuttingAndStitching_HandleColour String? // Handle color
-  cuttingAndStitching_Packing YN? // Whether packing is required
-  cuttingAndStitching_Remarks String? // Remarks for cutting and stitching
-
-  documentUrl String[] @default([]) // Static file
-  itemImagesUrls String[] @default([]) // Array of image URLs
-
-  userName    String // Name of the user who created the item
-  userId      String
-  customerId  String
-  customer    Customer @relation("UserBOPPItems",fields: [customerId], references: [id])
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-
-
-model PETItem {
-  id          String @id @default(cuid())
-  name        String
-
-  type       String @default("BOPP") // Static type for BOPP items
-  description String?
-  banner  String? // Banner for image
-
-  billingName String? // Name used for billing purposes
-  brand       String? // Brand of the item
-  address     String? // Address associated with the item
-  GMS String? // Package Capacity
-
-  printingCheck Boolean @default(false) // Whether printing check is required
-  inspectionCheck Boolean @default(false) // Whether inspection check is required
-  lamination1Check Boolean @default(false) // Whether lamination check is required
-  lamination2Check Boolean @default(false) // Whether lamination check is required
-  slittingCheck Boolean @default(false) // Whether slitting check is required
-  pouchingCheck Boolean @default(false) // Whether pouching check is required
-
-
-  printing_SizexMic String? // Size for printing
-  printing_MaterialType String? // Material type for printing
-  printing_Cylinder String? // Cylinder for printing
-  printing_CylinderDirection String? // Cylinder Direction for printing
-  printing_NoOfColours Int? // Number of colors for printing
-  printing_Colours String? // Colors used for printing
-  printing_Remarks String? // Remarks for printing
-
-  inspection_Remarks String? // Remarks for inspection 1
-
-  lamination1_SizexMic String? // Size for lamination
-  lamination1_Type String? // Material type for lamination
-  lamination1_Remarks String? // Remarks for lamination
-
-  lamination2_SizexMic String? // Size for lamination
-  lamination2_Type String? // Material type for lamination
-  lamination2_Remarks String? // Remarks for lamination
-
-
-  slitting_RollOrPouch String? // Size for fabric lamination
-  slitting_PartyRollDirection String? // Material type for fabric lamination
-  slitting_RollMax String? // Sides for fabric lamination
-  slitting_Extra1 String? // Thickness for fabric lamination
-  slitting_Remarks String? // Remarks for fabric lamination
-
-  pouching_CenterSeal String? // Center seal type
-  pouching_BottomTop String? // Side seal type
-  pouching_Zipper YN? // Whether zipper is required
-  pouching_VNotch YN? // Whether V-notch is required
-
-
-  documentUrl String[] @default([]) // Static file
-  itemImagesUrls String[] @default([]) // Array of image URLs
-
-  userId      String
-  userName    String // Name of the user who created the item
-  customerId  String
-  customer    Customer @relation("UserPETItems",fields: [customerId], references: [id])
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-// Orders
-
-model BOPPOrder {
-  id          String @id @default(cuid())
-  detail      String
-  documentUrl String?
-  customerId  String
-  customer    Customer @relation("UserBOPPOrders",fields: [customerId], references: [id])
-}
-
-model PETOrder {
-  id          String @id @default(cuid())
-  detail      String
-  documentUrl String?
-  customerId  String
-  customer    Customer @relation("UserPETOrders",fields: [customerId], references: [id])
-}
-
-// Completed Orders
-
-model CompletedBOPPOrder {
-  id        String   @id @default(cuid())
-  detail    String
-  customerId  String
-  customer    Customer @relation("UserCompletedBOPPOrders",fields: [customerId], references: [id])
-
-
-  createdAt DateTime @default(now())
-}
-
-model CompletedPETOrder {
-  id        String   @id @default(cuid())
-  detail    String
-  customerId  String
-  customer    Customer @relation("UserCompletedPETOrders",fields: [customerId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-// JOB & SUBJOB SEPARATED FOR BOPP AND PET
-
-model BOPPJob {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  quantityKg  Float
-  dueDate     DateTime?
-  status      JobStatus  @default(PENDING)
-
-  deptId      String
-  dept      Dept     @relation("DeptBOPPJobs", fields: [deptId], references: [id])
-
-  subJobs     BOPPSubJob[]
-  documentUrl String?    // Pre-rendered document
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model PETJob {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  quantityKg  Float
-  dueDate     DateTime?
-  status      JobStatus  @default(PENDING)
-
-  deptId      String
-  dept      Dept     @relation("DeptPETJobs", fields: [deptId], references: [id])
-
-  subJobs     PETSubJob[]
-  documentUrl String?    // Pre-rendered document
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model BOPPSubJob {
-  id            String        @id @default(cuid())
-  title         String
-  description   String?
-  priority      Priority      @default(MEDIUM)
-  dueDate       DateTime?
-  status        SubJobStatus @default(PENDING)
-
-  jobId         String
-  job           BOPPJob       @relation(fields: [jobId], references: [id])
-
-  assignedToId  String?
-  assignedTo    Employee?         @relation("UserAssignedBOPPSubJobs", fields: [assignedToId], references: [id])
-
-  documentUrl   String?       // Pre-rendered document
-
-  startedAt     DateTime?
-  completedAt   DateTime?
-
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-}
-
-model PETSubJob {
-  id            String        @id @default(cuid())
-  title         String
-  description   String?
-  priority      Priority      @default(MEDIUM)
-  dueDate       DateTime?
-  status        SubJobStatus @default(PENDING)
-
-  jobId         String
-  job           PETJob        @relation(fields: [jobId], references: [id])
-
-  assignedToId  String?
-  assignedTo    Employee?         @relation("UserAssignedPETSubJobs", fields: [assignedToId], references: [id])
-
-  documentUrl   String?       // Pre-rendered document
-
-  startedAt     DateTime?
-  completedAt   DateTime?
-
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-}
-
-//
-// ===================
-// ENUMS
-// ===================
-
-enum JobStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  HOLD
-}
-enum UserType {
-  CUSTOMER
-  EMPLOYEE
-}
-
-enum SubJobStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  HOLD
-  FAILED
-  REVIEW
-}
-
-enum Priority {
-  LOWEST
-  LOW
-  MEDIUM
-  HIGH
-  HIGHEST
-  OPTIONAL     // May not be necessary but useful
-  CRITICAL     // More urgent than highest
-  BLOCKER      // Must be done before anything else
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
 }

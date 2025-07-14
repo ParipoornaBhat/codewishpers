@@ -15,7 +15,8 @@ const setFlashError = (res: NextResponse, message: string) => {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = await getToken({ req: request, secret: env.AUTH_SECRET });
-
+  console.log("Middleware token:", token);
+  console.log("ENV.AUTH_SECRET:", env.AUTH_SECRET);
   // Redirect /auth and /auth/login to /auth/signin
   if (pathname === "/auth" || pathname === "/auth/login") {
     return NextResponse.redirect(new URL("/auth/signin", request.url));
