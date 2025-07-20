@@ -92,9 +92,6 @@ useEffect(() => {
 const handleSave = () => {
   const startIST = DateTime.fromISO(localData.startTime, { zone: "Asia/Kolkata" });
   const endIST = DateTime.fromISO(localData.endTime, { zone: "Asia/Kolkata" });
-
-  console.log("Updating question (IST):", startIST.toFormat("yyyy-MM-dd HH:mm:ss ZZZZ"), endIST.toFormat("yyyy-MM-dd HH:mm:ss ZZZZ"));
-
   updateMutation.mutate({
     ...localData,
     startTime: startIST.toISO(), // keeps +05:30

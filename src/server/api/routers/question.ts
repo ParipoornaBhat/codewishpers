@@ -79,7 +79,6 @@ export const questionRouter = createTRPCRouter({
         },
       });
     }
-    console.log("Question selected:", question);
     // 5. Return question data in compatible format
     return {
       title: question.title,
@@ -268,8 +267,6 @@ update: publicProcedure
   )
 .mutation(async ({ ctx, input }) => {
   const { id, testCases = [], ...questionData } = input;
-  console.log(input)
-  console.log("Updating question:", questionData.startTime, questionData.endTime);
   // 1. Sync TestCases
   const existing = await ctx.db.testCase.findMany({
     where: { questionId: id },
