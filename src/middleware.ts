@@ -14,7 +14,11 @@ const setFlashError = (res: NextResponse, message: string) => {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = await getToken({ req: request, secret: env.AUTH_SECRET, cookieName: "next-auth.session-token" });
+  const token = await getToken({
+    req: request,
+    secret: env.AUTH_SECRET,
+    cookieName: "next-auth.session-token",
+  });
 
   // Redirect /auth and /auth/login to /auth/signin
   if (pathname === "/auth" || pathname === "/auth/login") {
@@ -35,9 +39,24 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
+  // ✅ Restrict /dashboard routes to ADMINs only
+  if (pathname.startsWith("/dashboard")) {
+    if (!token) {
+      const res = NextResponse.redirect(new URL("/auth/signin", request.url));
+      setFlashError(res, "Please login as admin to access the dashboard.");
+      return res;
+    }
+
+    if (token.role !== "ADMIN") {
+      const res = NextResponse.redirect(new URL("/", request.url));
+      setFlashError(res, "Access denied: Admins only.");
+      return res;
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/auth", "/auth/:path*", "/play"],
+  matcher: ["/auth", "/auth/:path*", "/play", "/dashboard/:path*"],
 };
