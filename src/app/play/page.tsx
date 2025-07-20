@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Plus, Play, Save, Download } from "lucide-react"
 import WorksheetCanvas from "@/components/worksheet-canvas"
 import FunctionLibrary from "@/components/function-library"
+import QuestionCard from "@/components/questionCard"
 import TestPanel from "@/components/test-panel"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-
+import clsx from "clsx";
+import { usePlaySettings } from "@/lib/stores/usePlaySettings";
 interface Worksheet {
   id: string
   name: string
@@ -18,12 +20,12 @@ interface Worksheet {
 }
 
 export default function CodeWhispersApp() {
-  const [autoSave, setAutoSave] = useState(true)
 
+const { autoSave, setAutoSave, showTestPanel, setShowTestPanel, isLibFunctionsOpen, QuestionCardOpen } = usePlaySettings();
   const [worksheets, setWorksheets] = useState<Worksheet[]>([])
 
   const [activeWorksheet, setActiveWorksheet] = useState<string | null>(null)
-  const [showTestPanel, setShowTestPanel] = useState(false)
+
   
   const extractWorksheetsFromLocalStorage = (): Worksheet[] => {
   const result: Worksheet[] = []
@@ -113,38 +115,25 @@ useEffect(() => {
   return (
     <div className="h-[calc(100vh-100px)] sm:h-[calc(100vh-80px)] lg:h-[calc(100vh-64px)] flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-950">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              CodeWhispers Round 2
-            </h1>
-            <div className="text-sm text-muted-foreground">Visual Function Chaining Challenge</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowTestPanel(!showTestPanel)}>
-              <Play className="w-4 h-4 mr-2" />
-              Test Functions
-            </Button>
-          <div className="flex items-center gap-2 px-3 py-1 bg-white dark:bg-gray-700 rounded-md shadow-md">
-            <Label htmlFor="autosave-switch" className="text-sm text-gray-700 dark:text-gray-200">
-              Auto-Save
-            </Label>
-            <Switch
-              id="autosave-switch"
-              checked={autoSave}
-              onCheckedChange={setAutoSave}
-            />
-          </div>
-          </div>
-        </div>
-      </div>
 
       <div className="flex-1 flex">
-        {/* Function Library Sidebar */}
-       <div className="w-80 h-[calc(100vh-130px)] overflow-y-auto bg-white dark:bg-gray-800 border-r dark:border-gray-700 shadow-sm">
-        <FunctionLibrary />
-      </div>
+        {/* Function Library Sidebar & Question Card */}
+        <div
+          className={clsx(
+            "relative top-0 left-0 h-[calc(100vh-70px)] z-50 transition-all duration-300 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg",
+            QuestionCardOpen ? "w-[500px]" : "w-10"
+          )}
+        >
+          <QuestionCard />
+        </div>
+        <div
+          className={clsx(
+    "relative top-0 left-0 h-[calc(100vh-70px)] z-50 transition-all duration-300 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg",
+    isLibFunctionsOpen ? "w-[300px]" : "w-10"
+  )}
+>
+      <FunctionLibrary />
+    </div>
 
 
         {/* Main Canvas Area */}
@@ -187,7 +176,7 @@ useEffect(() => {
         </div>
         {/* Test Panel */}
         {showTestPanel && (
-          <div className="w-96 h-[calc(100vh-130px)] bg-white dark:bg-gray-800 border-l dark:border-gray-700 shadow-sm">
+          <div className="w-96 h-[calc(100vh-70px)] bg-white dark:bg-gray-800 border-l dark:border-gray-700 shadow-sm">
             <TestPanel worksheet={currentWorksheet} onClose={() => setShowTestPanel(false)} />
           </div>
         )}

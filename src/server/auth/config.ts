@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { adminAccounts } from "@/lib/admin"; // ✅ import admin metadata
-
+import { db } from "@/server/db";
 // --- Type augmentation ---
 declare module "next-auth" {
   interface Session {
@@ -27,25 +27,37 @@ declare module "next-auth" {
 export const authConfig: NextAuthConfig = {
   providers: [
     // ✅ Team login (teamName only)
-    CredentialsProvider({
-      id: "team-login",
-      name: "Team Login",
-      credentials: {
-        teamName: { label: "Team Name", type: "text" },
-      },
-      async authorize(credentials: Partial<Record<"teamName", unknown>>, req: Request) {
-        const teamName = typeof credentials?.teamName === "string" ? credentials.teamName.trim() : "";
+   CredentialsProvider({
+  id: "team-login",
+  name: "Team Login",
+  credentials: {
+    teamName: { label: "Team Name", type: "text" },
+  },
+  async authorize(credentials) {
+    const teamName =
+      typeof credentials?.teamName === "string"
+        ? credentials.teamName.trim()
+        : "";
 
-        if (!teamName) return null;
+    if (!teamName) return null;
 
-        return {
-          id: teamName.toLowerCase().replace(/\s+/g, "-"),
-          teamName,
-          role: "TEAM",
-          permissions: [],
-        };
+    // ✅ Check in DB if this team exists
+    const team = await db.team.findFirst({
+      where: {
+        name: teamName,
       },
-    }),
+    });
+
+    if (!team) return null;
+
+    return {
+      id: team.id,
+      teamName: team.name,
+      role: "TEAM",
+      permissions: [], // add if needed
+    };
+  },
+}),
 
     // ✅ Admin login (userId + password + specific permissions)
 CredentialsProvider({

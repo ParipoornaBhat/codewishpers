@@ -39,24 +39,26 @@ export default function TeamLoginPage() {
   };
 
   const handleCheckAndLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!teamName.trim()) {
-      toast.error("Please enter your team name or admin ID.");
-      return;
-    }
+  if (!teamName.trim()) {
+    toast.error("Please enter your team name.");
+    return;
+  }
 
-    const isAdminLogin = checkIfAdmin(teamName);
-    setIsAdmin(isAdminLogin);
+  const isAdminLogin = checkIfAdmin(teamName);
+  setIsAdmin(isAdminLogin);
 
-    if (!isAdminLogin) {
-      // 🔓 Regular team login
+  if (!isAdminLogin) {
+    try {
       const result = await signIn("team-login", {
         teamName,
         redirect: false,
       });
 
-      if (result?.ok) {
+      if (result?.error === "CredentialsSignin") {
+        toast.error("Invalid team name. Please try again.");
+      } else if (result?.ok) {
         document.cookie = [
           "flash_success=Login successful!",
           "max-age=10",
@@ -64,10 +66,14 @@ export default function TeamLoginPage() {
         ].join("; ");
         router.push("/play");
       } else {
-        toast.error("Team login failed.");
+        toast.error("An unexpected error occurred. Please try again.");
       }
+    } catch (err) {
+      toast.error("Something went wrong while signing in.");
     }
-  };
+  }
+};
+
 
   const handleAdminLogin = async () => {
   if (!password.trim()) {
