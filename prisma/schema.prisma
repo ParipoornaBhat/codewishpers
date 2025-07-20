@@ -72,3 +72,62 @@ model VerificationToken {
 
     @@unique([identifier, token])
 }
+model Question {
+  id          String      @id @default(cuid())
+  code        String      @unique        // e.g., QUES-ABC123
+  title       String
+  description String
+  createdAt   DateTime    @default(now())
+  testCases   TestCase[]
+  submissions Submission[]
+  leaderboard LeaderboardEntry[]
+}
+
+model TestCase {
+  id         String   @id @default(cuid())
+  input      String
+  expected   String
+  isVisible  Boolean  @default(false)   // Hidden by default
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+}
+
+model Team {
+  id         String        @id @default(cuid())
+  name       String        @unique           // Team name is used for login
+  createdAt  DateTime      @default(now())
+  submissions Submission[]
+  leaderboard LeaderboardEntry[]
+}
+
+model Submission {
+  id              String     @id @default(cuid())
+  team            Team       @relation(fields: [teamId], references: [id])
+  teamId          String
+  question        Question   @relation(fields: [questionId], references: [id])
+  questionId      String
+  codeSubmitted   String     // Actual code string
+  passedCount     Int        @default(0)
+  failedCount     Int        @default(0)
+  allPassed       Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+
+  failedTestCases Json?
+  revealedHidden  Boolean    @default(false)
+
+  leaderboardEntries LeaderboardEntry[]
+}
+
+
+model LeaderboardEntry {
+  id           String     @id @default(cuid())
+  team         Team       @relation(fields: [teamId], references: [id])
+  teamId       String
+  question     Question   @relation(fields: [questionId], references: [id])
+  questionId   String
+  submission   Submission @relation(fields: [submissionId], references: [id])
+  submissionId String
+  rank         Int
+  submittedAt  DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}

@@ -92,7 +92,11 @@ const [open, setOpen] = useState(false);
               Round 2
             </Link>
           )}
-
+         {role === "ADMIN" && (
+      <Link href="/dashboard" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
+        Dashboard
+      </Link>
+    )}
            
         </nav>
 
@@ -133,6 +137,39 @@ const [open, setOpen] = useState(false);
       </SheetContent>
     </Sheet>
   )}
+  {role === "ADMIN" && (
+  <Sheet>
+    <SheetTrigger asChild>
+      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+        Admin Info
+      </DropdownMenuItem>
+    </SheetTrigger>
+    <SheetContent
+      side="right"
+      className="lg:mt-14 w-full sm:max-w-md lg:max-w-sm rounded-sm bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 shadow-xl p-6"
+    >
+      <SheetTitle className="text-lg font-semibold mb-2 text-teal-700 dark:text-teal-300">
+        Admin Details
+      </SheetTitle>
+      <div className="space-y-2 text-sm text-gray-800 dark:text-gray-200">
+        <div>
+          <span className="font-medium">Admin ID:</span> {session?.user.id}
+        </div>
+        <div>
+          <span className="font-medium">Team Name:</span> {session?.user.teamName}
+        </div>
+        <div>
+          <span className="font-medium">Role:</span> {session?.user.role}
+        </div>
+        <div>
+          <span className="font-medium">Permissions:</span>{" "}
+          {session?.user.permissions?.join(", ") || "None"}
+        </div>
+      </div>
+    </SheetContent>
+  </Sheet>
+)}
+
 
   {/* Sign Out */}
   <DropdownMenuItem onClick={() => setOpen(false)}>
@@ -145,7 +182,7 @@ const [open, setOpen] = useState(false);
           "max-age=5",
           "path=/",
         ].join("; ");
-        window.location.href = "/";
+        window.location.href = "/auth/signin";
       }}
       className="w-full text-left"
     >
@@ -207,46 +244,38 @@ const [open, setOpen] = useState(false);
     Home
   </Link>
 
-  <Link href="/about" onClick={handleClose}  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
-    <FaInfoCircle className="h-5 w-5" />
-    About
-  </Link>
+  
+
 
   {session ? (
     <>
-      <Link href="/orderitems" onClick={handleClose}  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
-        <FaBoxOpen className="h-5 w-5" />
-        Order
-      </Link>
-
-      <Link href="/orderhistory" onClick={handleClose}  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
-        <FaHistory className="h-5 w-5" />
-        Order History
-      </Link>
-
-      <Link href="/dashboard" onClick={handleClose}  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
-        <FaTachometerAlt className="h-5 w-5" />
+      {role === "TEAM" && (
+            <Link href="/play" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
+              Round 2
+            </Link>
+          )}
+      {role === "ADMIN" && (
+      <Link href="/dashboard" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
         Dashboard
       </Link>
-       <button
-        onClick={async () => {
-          await signOut({ redirect: false }); // Wait for next-auth sign out
-          setOpen(false);
-
-          // Set a 5-second flash success cookie
-          document.cookie = [
-            "flash_success=You are signed out successfully.",
-            "max-age=5",
-            "path=/",
-          ].join("; ");
-
-          window.location.href = "/"; // Redirect to home
-        }}
-        className="w-full text-left"
-      >
-        Sign Out
+    )}
+    <button
+      onClick={async () => {
+        await signOut({ redirect: false });
+        setOpen(false);
+        document.cookie = [
+          "flash_success=You are signed out successfully.",
+          "max-age=5",
+          "path=/",
+        ].join("; ");
+        window.location.href = "/auth/signin";
+      }}
+      className="w-full text-left"
+    >
+      Sign Out
     </button>
-    </>
+
+  </>
   ) : (
     <Link href="/auth/signin" onClick={handleClose}  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
       <HiOutlineLogin className="h-5 w-5" />
