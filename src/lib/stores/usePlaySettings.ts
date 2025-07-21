@@ -23,7 +23,7 @@ export const usePlaySettings = create<PlaySettingsStore>((set) => ({
   setIsLibFunctionsOpen: (value) => set({ isLibFunctionsOpen: value }),
   QuestionCardOpen: true,
   setQuestionCardOpen: (value) => set({ QuestionCardOpen: value }),
-  showSubmissions: true,
+  showSubmissions: false,
   toggleSubmissions: () => set((state) => ({ showSubmissions: !state.showSubmissions })),
 
 }));
