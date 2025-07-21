@@ -13,19 +13,19 @@ export const questionRouter = createTRPCRouter({
     const { code } = input;
 
     // 1. Get the question with visible test cases and team access
-    const question = await ctx.db.question.findUnique({
-      where: { code },
-      include: {
-        testCases: {
-          where: { isVisible: true },
-          select: {
-            input: true,
-            expected: true,
-          },
-        },
-        teams: true,
+   const question = await ctx.db.question.findUnique({
+  where: { code },
+  include: {
+    testCases: {
+      select: {
+        input: true,
+        expected: true,
+        isVisible: true, // include this to preserve visibility info
       },
-    });
+    },
+    teams: true,
+  },
+});
 
     if (!question) {
       throw new TRPCError({

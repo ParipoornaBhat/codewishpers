@@ -111,14 +111,13 @@ export default function FunctionLibrary() {
           </div>
         </div>
       ) : (
-        <div className="h-full flex flex-col justify-center items-center">
-          <button
-            onClick={() => setIsOpen(true)}
-            className="text-gray-500 hover:text-gray-900 dark:hover:text-white"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+        <div
+  className="h-full flex flex-col justify-center items-center cursor-pointer text-gray-500 hover:text-gray-900 dark:hover:text-white"
+  onClick={() => setIsOpen(true)}
+>
+  <ChevronRight className="w-6 h-6" />
+</div>
+
       )}
     </div>
   )

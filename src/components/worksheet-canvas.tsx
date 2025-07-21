@@ -24,15 +24,13 @@ import InputNode from "./input-node"
 import OutputNode from "./output-node"
 import { Button } from "@/components/ui/button"
 import { RotateCcw, Eraser, Trash2, MousePointer, Lock, Unlock } from "lucide-react"
+import { useWorksheetStore } from "@/lib/stores/useWorksheetStore"
 
 const nodeTypes = {
   function: FunctionNode,
   input: InputNode,
   output: OutputNode,
 }
-
-
-
 interface WorksheetCanvasProps {
   worksheetId: string
   initialNodes: Node[]
@@ -42,20 +40,32 @@ interface WorksheetCanvasProps {
 }
 
 function WorksheetCanvasInner({ worksheetId, initialNodes, initialEdges, onUpdate, autoSave}: WorksheetCanvasProps) {
+
 //auto save funtionality using localStorage
 // 🧠 LocalStorage keys scoped by worksheetId
 
 const getLocalKey = (id: string) => `worksheet-${id}`
 
 const saveToLocalStorage = (id: string, nodes: Node[], edges: Edge[]) => {
+  if(autoSave){
   try {
     localStorage.setItem(
       getLocalKey(id),
       JSON.stringify({ nodes, edges })
     )
+    const key = getLocalKey(id);
+    const data = { nodes, edges };
+
+localStorage.setItem(key, JSON.stringify(data));
+console.log("Stored worksheet:", data);
   } catch (e) {
     console.warn("📦 Failed to save worksheet to localStorage", e)
-  }
+  }}
+
+//stores in zustand as well
+useWorksheetStore.getState().setWorksheet(worksheetId, nodes, edges)
+
+
 }
 const loadFromLocalStorage = (id: string): { nodes: Node[]; edges: Edge[] } | null => {
   try {
@@ -77,11 +87,14 @@ useEffect(() => {
   if (saved) {
     setNodes(saved.nodes)
     setEdges(saved.edges)
+    useWorksheetStore.getState().setWorksheet(worksheetId, saved.nodes, saved.edges)
   } else {
     setNodes(initialNodes)
     setEdges(initialEdges)
+    useWorksheetStore.getState().setWorksheet(worksheetId, initialNodes, initialEdges)
   }
   // Reset previous input tracking too
+  
   prevInputValRef.current = null
   prevFuncInputEdgesRef.current = new Map()
 }, [worksheetId])
@@ -149,9 +162,9 @@ useEffect(() => {
     const timeout = setTimeout(() => {
       executeChain()
       onUpdate(worksheetId, nodes, edges)
-      if (autoSave) {
+     
   saveToLocalStorage(worksheetId, nodes, edges)
-}
+
   //New: Save to localStorage
       // Update references
       prevInputValRef.current = inputVal
@@ -197,9 +210,9 @@ const refreshChain = () => {
     const timeout = setTimeout(() => {
       executeChain()
       onUpdate(worksheetId, nodes, edges)
-      if (autoSave) {
+      
   saveToLocalStorage(worksheetId, nodes, edges)
-}
+
 
 
       prevInputValRef.current = inputVal
@@ -356,6 +369,8 @@ const updateNode = (id: string, data: Record<string, any>) => {
 
     const updatedEdges = addEdge(newEdge, edges)
     setEdges(updatedEdges)
+saveToLocalStorage(worksheetId, nodes, updatedEdges)
+useWorksheetStore.getState().setWorksheet(worksheetId, nodes, updatedEdges)
 
     setNodes((prevNodes) =>
       prevNodes.map((node) => {
@@ -490,8 +505,8 @@ const onDrop = useCallback(
   setTimeout(() => {
     executeChain()
     onUpdate(worksheetId, cleared, edges)
-    if(autoSave){
-    saveToLocalStorage(worksheetId, cleared, edges)}
+   
+    saveToLocalStorage(worksheetId, cleared, edges)
     refreshChain()
   }, 0)
 }
@@ -499,17 +514,17 @@ const onDrop = useCallback(
   const clearAllConnections = () => {
     setEdges([])
     resetWorksheet()
-        if(autoSave){
+        
     saveToLocalStorage(worksheetId, nodes, []) // no edges
-        }
+        
   }
 
   const clearAllNodes = () => {
     setNodes((nds) => nds.filter((node) => node.type === "input" || node.type === "output"))
     setEdges([])
-        if(autoSave){
+        
     saveToLocalStorage(worksheetId, [], [])
-        }
+        
   }
 
   const toggleEraserMode = () => {
@@ -530,9 +545,9 @@ const onDrop = useCallback(
           (edge) => edge.source !== nodeId && edge.target !== nodeId
         )
         // Save to localStorage using updated versions
-            if(autoSave){
+           
         saveToLocalStorage(worksheetId, updatedNodes, updatedEdges)
-            }
+            
         return updatedEdges
       })
 

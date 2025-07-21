@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
- import { DateTime } from "luxon";
 
 import { api } from "@/trpc/react";
 import { ComponentLoading } from "@/app/_components/component-loading2";
@@ -88,17 +87,9 @@ useEffect(() => {
     });
   };
 
-
-const handleSave = () => {
-  const startIST = DateTime.fromISO(localData.startTime, { zone: "Asia/Kolkata" });
-  const endIST = DateTime.fromISO(localData.endTime, { zone: "Asia/Kolkata" });
-  updateMutation.mutate({
-    ...localData,
-    startTime: startIST.toISO(), // keeps +05:30
-    endTime: endIST.toISO(),
-  });
-};
-
+  const handleSave = () => {
+    updateMutation.mutate(localData);
+  };
 
   const handleCancel = () => {
     setLocalData(JSON.parse(JSON.stringify(data))); // revert back to original
