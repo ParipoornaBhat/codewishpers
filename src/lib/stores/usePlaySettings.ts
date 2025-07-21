@@ -10,6 +10,8 @@ type PlaySettingsStore = {
   setIsLibFunctionsOpen: (value: boolean) => void;
   QuestionCardOpen: boolean;
   setQuestionCardOpen: (value: boolean) => void;
+  showSubmissions?: boolean;
+  toggleSubmissions?: (value: boolean) => void;
 };
 
 export const usePlaySettings = create<PlaySettingsStore>((set) => ({
@@ -21,4 +23,7 @@ export const usePlaySettings = create<PlaySettingsStore>((set) => ({
   setIsLibFunctionsOpen: (value) => set({ isLibFunctionsOpen: value }),
   QuestionCardOpen: true,
   setQuestionCardOpen: (value) => set({ QuestionCardOpen: value }),
+  showSubmissions: true,
+  toggleSubmissions: () => set((state) => ({ showSubmissions: !state.showSubmissions })),
+
 }));

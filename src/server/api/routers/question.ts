@@ -3,7 +3,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/
 import { TRPCError } from "@trpc/server"
 import { nanoid } from "nanoid"
 export const questionRouter = createTRPCRouter({
-  questionselect: protectedProcedure
+ questionselect: protectedProcedure
   .input(
     z.object({
       code: z.string().min(1),
@@ -13,19 +13,19 @@ export const questionRouter = createTRPCRouter({
     const { code } = input;
 
     // 1. Get the question with visible test cases and team access
-   const question = await ctx.db.question.findUnique({
-  where: { code },
-  include: {
-    testCases: {
-      select: {
-        input: true,
-        expected: true,
-        isVisible: true, // include this to preserve visibility info
+    const question = await ctx.db.question.findUnique({
+      where: { code },
+      include: {
+        testCases: {
+          select: {
+            input: true,
+            expected: true,
+            isVisible: true, // include this to preserve visibility info
+          },
+        },
+        teams: true,
       },
-    },
-    teams: true,
-  },
-});
+    });
 
     if (!question) {
       throw new TRPCError({
@@ -62,33 +62,36 @@ export const questionRouter = createTRPCRouter({
       });
     }
 
-    // 4. Create submission if not already created
-    const existingSubmission = await ctx.db.submission.findFirst({
+    // 4. Just fetch existing submission, DO NOT create
+    const existingSubmission = await ctx.db.submission.findMany({
       where: {
         teamId: team.id,
         questionId: question.id,
       },
+      select: {
+        id: true,
+        passedTestCases: true,
+        totalTestCases: true,
+        createdAt: true,
+        allPassed: true,
+        failedTestCases: true,        
+        submissionCode: true,
+        worksheet: true, // include worksheet data
+      },
     });
 
-    if (!existingSubmission) {
-      await ctx.db.submission.create({
-        data: {
-          teamId: team.id,
-          questionId: question.id,
-          codeSubmitted: "",
-        },
-      });
-    }
     // 5. Return question data in compatible format
     return {
+      id: question.id,
       title: question.title,
       description: question.description,
       testCases: question.testCases,
       difficulty: question.difficulty,
       startTime: question.startTime ? question.startTime.toISOString() : null,
       endTime: question.endTime ? question.endTime.toISOString() : null,
-      createdAt: question.createdAt.toISOString(), // string type
+      createdAt: question.createdAt.toISOString(),
       code: question.code,
+      submissions: existingSubmission ?? null,
     };
   }),
 

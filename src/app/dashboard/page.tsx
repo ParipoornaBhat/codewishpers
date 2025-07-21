@@ -185,6 +185,9 @@ const { mutate: deleteQuestion, isPending: isDeleting } = api.question.delete.us
       },
     },
   }
+
+  const [viewEditQuestionId, setViewEditQuestionId] = useState<string | null>(null)
+
   return (
 
    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-teal-50 via-purple-50 to-orange-50 dark:from-teal-900 dark:via-purple-900 dark:to-orange-900">
@@ -485,7 +488,8 @@ const { mutate: deleteQuestion, isPending: isDeleting } = api.question.delete.us
                         
                          <Dialog open={viewEdit} onOpenChange={SetViewEdit}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full bg-transparent">
+        <Button variant="outline" size="sm" className="w-full bg-transparent"    onClick={() => setViewEditQuestionId(question.id)}
+>
           <PencilIcon className="h-3.5 w-3.5" />
           <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
             View/Edit
@@ -504,13 +508,14 @@ const { mutate: deleteQuestion, isPending: isDeleting } = api.question.delete.us
             Question Details
           </DialogDescription>
         </DialogHeader>
-                  <ViewEditQuestion questionId={question.id} close={() => SetViewEdit(false)} />
-
-      </DialogContent>
-    </Dialog>
-                          
-                        
-
+{viewEditQuestionId && (
+  <ViewEditQuestion
+    questionId={viewEditQuestionId}
+    close={() => setViewEditQuestionId(null)}
+  />
+)}
+</DialogContent>
+</Dialog>
                         <Link href={`/${question.code}/leaderboard`} className="flex-1">
                           <Button variant="outline" size="sm" className="w-full bg-transparent">
                             <Users className="w-4 h-4 mr-2" />

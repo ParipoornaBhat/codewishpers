@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,9 @@ import {  XCircle, Loader2, Timer  } from "lucide-react"
 import { useWorksheetStore } from "@/lib/stores/useWorksheetStore"
 import { executeGraphAndCheckOutput } from "@/lib/testRunner"
 import { FUNCTION_META } from "@/lib/functionMeta" // Importing the function metadata
-
+import { getSession } from "next-auth/react"
+import {SubmissionHistory} from "@/components/submissionhistory"
+import type { JsonValue } from "@prisma/client/runtime/library"
  type HandleTestProps = {
   fnMutations: Record<string, any>
   updateNode?: (id: string, data: any) => void
@@ -27,9 +29,26 @@ import { FUNCTION_META } from "@/lib/functionMeta" // Importing the function met
 type TestCase = {
   input: string
   expected: string
+  isVisible?: boolean
+}
+type Submission = {
+ id: number
+    passedTestCases: number
+    totalTestCases: number
+    createdAt: Date
+    allPassed: boolean
+    failedTestCases: {
+      input: string
+      output: string
+      expected: string
+      originalIdx: number
+  }[]
+  submissionCode: string
+  worksheet: JsonValue
 }
 
 type QuestionData = {
+  id: string
   title: string
   description: string
   testCases: TestCase[]
@@ -38,6 +57,7 @@ type QuestionData = {
   endTime?: string | null
   createdAt: string
   code: string
+  submissions?: Submission[] | null
 }
 
 export default function QuestionCard() {
@@ -60,16 +80,42 @@ export default function QuestionCard() {
 const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
 
 
-  const { mutate: selectQuestion, isPending } = api.question.questionselect.useMutation({
+  const { mutate: selectQuestion, isPending: isQuestionPending } = api.question.questionselect.useMutation({
     onSuccess: (data) => {
-      if (!data) {
-        toast.error("Invalid Question Code!")
-        return
-      }
-      setQuestionData(data)
-      setTestCases(data.testCases) 
-      toast.success("Question loaded successfully!")
-    },
+  if (!data) {
+    toast.error("Invalid Question Code!")
+    return
+  }
+
+  const formattedData: QuestionData = {
+    ...data,
+    submissions: data.submissions?.map((s) => ({
+      ...s,
+      createdAt: typeof s.createdAt === "string"
+        ? new Date(s.createdAt)
+        : s.createdAt,
+
+      submissionCode: s.submissionCode ?? "",
+
+      failedTestCases: Array.isArray(s.failedTestCases)
+        ? s.failedTestCases as {
+            input: string
+            output: string
+            expected: string
+            originalIdx: number
+          }[]
+        : [],
+    })) ?? [],
+  }
+
+  setQuestionData(formattedData)
+  setTestCases(
+    formattedData.testCases.map(tc => ({
+      ...tc,
+      isVisible: typeof tc.isVisible === "boolean" ? tc.isVisible : true // default to true if missing
+    }))
+  )
+},
     onError: (err) => {
       toast.error(`Failed to load question: ${err.message}`)
     },
@@ -124,34 +170,78 @@ const end = questionData?.endTime ? DateTime.fromISO(questionData.endTime).setZo
       setTestResults(Array(questionData.testCases.length).fill(null));
     }
   }, [questionData?.testCases]);
+  
+const { mutate: saveSubmissionMutation, isPending } = api.submission.save.useMutation({
+  onSuccess: (data) => {
+    // toast.success("Submission saved successfully ✅", {
+    //   description: `Code: ${data.submissionCode}`,
+    // })
+// Set submittedAt with formatted string
+setSubmittedAt(
+  new Date(data.createdAt).toLocaleString("en-IN", {
+    dateStyle: "medium", // e.g., "Jul 21, 2025"
+    timeStyle: "short",  // e.g., "10:37 AM"
+  })
+
+)
+  },
+  onError: (error) => {
+    toast.error("Failed to save submission ❌", {
+      description: error.message,
+    })
+  },
+})
 
 const saveSubmission = async () => {
   const currentWorksheet = useWorksheetStore.getState().getCurrentWorksheet()
-  if (!currentWorksheet) throw new Error("No worksheet found")
+  if (!currentWorksheet) {
+    toast.error("No worksheet found")
+    return
+  }
 
-  const { testCases, testResults, failedTestCase } = useQuestionStore.getState()
-
+  const { testCases, testResults, failedTestCase, setFailedTestCase } = useQuestionStore.getState()
   const passedCount = testResults.filter((res) => res === true).length
   const totalCount = testCases.length
 
-  const timing = {
-    submittedAt: DateTime.now().toISO(),
-  }
-
-  console.log("Submission timing:", timing)
+  
 
   if (failedTestCase) {
     console.log(
       `${passedCount}/${totalCount} Passed. ❌ Failed at Input:`,
       failedTestCase.input,
       "Output:",
+      failedTestCase.expected ?? "null"," Your Output:",
       failedTestCase.output ?? "null"
     )
   } else {
     console.log(`✅ ${passedCount}/${totalCount} Test Cases Passed.`)
   }
 
-  // 🔒 Submission save logic can go here
+  // 👇 Replace this comment with actual mutation logic
+  const session = await getSession()
+  const teamId = session?.user.id // Adjust if your session structure differs
+
+  if (!teamId || !questionData?.id) {
+    toast.error("Missing team or question ID")
+    return
+  }
+  saveSubmissionMutation({
+    teamId,
+    questionId: questionData.id, // Use the question ID from the loaded data
+    worksheet: currentWorksheet,
+    passedTestCases: passedCount,
+    totalTestCases: totalCount,
+    allPassed: passedCount === totalCount,
+    failedTestCase: failedTestCase
+      ? {
+          input: failedTestCase.input,
+          expected: failedTestCase.expected,
+          output: failedTestCase.output,
+          originalIdx: failedTestCase.originalIdx,
+        }
+      : null,
+  })
+
 }
 const handleTest = async ({
   fnMutations,
@@ -174,112 +264,101 @@ const handleTest = async ({
     setFailedTestCase,
   } = useQuestionStore.getState()
 
-  // Helper function to run and log a test case
-  const runTest = async (test: any, idx: number) => {
-    try {
-      setLoadingAt?.(idx, true)
+  const visibleIndexes = testCases.map((t, i) => (t.isVisible ? i : -1)).filter((i) => i !== -1)
+  const hiddenIndexes = testCases.map((t, i) => (!t.isVisible ? i : -1)).filter((i) => i !== -1)
+  const indexesToRun = runVisible ? visibleIndexes : [...visibleIndexes, ...hiddenIndexes]
 
-      const { passed, result, intermediateSteps } =
-        await executeGraphAndCheckOutput({
+  const updatedResults = Array(testCases.length).fill(null)
+  setTestResults(updatedResults)
+  useQuestionStore.getState().setTestLoading(Array(testCases.length).fill(true))
+
+  let isHalted = false
+  let firstVisibleFailure: any = null
+  let firstHiddenFailure: any = null
+
+  await Promise.all(
+    indexesToRun.map(async (idx) => {
+      const test = testCases[idx]
+      if (!test || isHalted) return
+
+      try {
+        setLoadingAt?.(idx, true)
+
+        const { passed, result } = await executeGraphAndCheckOutput({
           nodes,
           edges,
           testInput: test.input,
           fnMutations,
         })
 
-      // console.group(`Test #${idx + 1}`)
-      // console.log("🟩 Input:", test.input)
-      // console.log("✅ Expected Output:", test.expected)
-      // console.log("🧠 Final Output:", result)
-      // console.log("✔️ Passed:", passed)
+        if (typeof result === "undefined") {
+          if (!isHalted) {
+            isHalted = true
+            toast.error(`🛑 Execution halted: Output is undefined for Test #${idx + 1}`)
+          }
+          return
+        }
 
-      // if (intermediateSteps?.length) {
-      //   intermediateSteps.forEach((step, i) => {
-      //     console.log(`Step ${i + 1}:`)
-      //     console.log("  Node ID:", step.nodeId)
-      //     console.log("  Input:", step.input)
-      //     console.log("  Output:", step.output)
-      //   })
-      // } else {
-      //   console.log("No intermediate steps captured.")
-      // }
+        updatedResults[idx] = passed
+        updateTestResult(idx, passed)
 
-      // console.groupEnd()
-      updateTestResult(idx, false)
-      return { passed, result }
-    } catch (err) {
-      console.error(`❌ Test #${idx + 1} failed:`, err)
-      updateTestResult(idx, false)
-      return { passed: false, result: null }
-    } finally {
-      setTimeout(() => setLoadingAt?.(idx, false), 100)
-    }
-  }
+        if (!passed && test?.isVisible && !firstVisibleFailure) {
+          firstVisibleFailure = { test, result, idx }
+        } else if (!passed && !test?.isVisible && !firstHiddenFailure) {
+          firstHiddenFailure = { test, result, idx }
+        }
+      } catch (err) {
+        console.error(`❌ Test #${idx + 1} failed:`, err)
+        updatedResults[idx] = false
+        updateTestResult(idx, false)
 
-  const visibleIndexes = testCases
-    .map((t, i) => (t.isVisible ? i : -1))
-    .filter((i) => i !== -1)
-
-  const hiddenIndexes = testCases
-    .map((t, i) => (!t.isVisible ? i : -1))
-    .filter((i) => i !== -1)
-
-  // Set initial loading state
-  const initialResults = Array(testCases.length).fill(null)
-  const initialLoading = Array(testCases.length).fill(true)
-
-  setTestResults(initialResults)
-  useQuestionStore.getState().setTestLoading(initialLoading)
-
-  // Run visible test cases in parallel
-  const visiblePromises = visibleIndexes.map(async (idx) =>
-    runTest(testCases[idx], idx).then((res) => res.passed),
+        if (test?.isVisible && !firstVisibleFailure) {
+          firstVisibleFailure = { test, result: null, idx }
+        } else if (!test?.isVisible && !firstHiddenFailure) {
+          firstHiddenFailure = { test, result: null, idx }
+        }
+      } finally {
+        setTimeout(() => setLoadingAt?.(idx, false), 100)
+      }
+    })
   )
-  const visibleResults = await Promise.all(visiblePromises)
 
-  visibleIndexes.forEach((idx, i) => {
-    updateTestResult(idx, visibleResults[i] ?? false)
-  })
-
-  if (runVisible) {
-    {
-      const updated: (boolean | null)[] = [...useQuestionStore.getState().testResults]
-      visibleIndexes.forEach((idx: number, i: number) => (updated[idx] = visibleResults[i] ?? null))
-      setTestResults(updated)
-    }
-    return
+  if (isHalted) {
+    useQuestionStore.getState().setTestLoading(Array(testCases.length).fill(false))
+    return // ⛔ stop further steps like saveSubmission
   }
 
-  // Sequentially run hidden tests
-  for (const idx of hiddenIndexes) {
-    const test = testCases[idx]
-    const { passed, result } = await runTest(test, idx)
+  setTestResults(updatedResults)
 
-    updateTestResult(idx, passed)
-    if (!passed) {
-      // Set failed test input/output and show toast
+  if (!runVisible) {
+    if (firstVisibleFailure) {
+      const { test, result, idx } = firstVisibleFailure
       setFailedTestCase({
-        input: test?.input ?? "",
-        output: result,
+        input: test.input,
+        output: `${result}`,
         originalIdx: idx,
-        expected: test?.expected ?? "",
+        expected: test.expected,
+      })
+      toast.error(`❌ Visible Test Case #${idx + 1} Failed`)
+    } else if (firstHiddenFailure) {
+      const { test, result, idx } = firstHiddenFailure
+      setFailedTestCase({
+        input: test.input,
+        output: `${result}`,
+        originalIdx: idx,
+        expected: test.expected,
       })
       toast.error(`❌ Hidden Test Case #${idx + 1} Failed`)
-      {
-        const updated = [...useQuestionStore.getState().testResults]
-        updated[idx] = false
-        setTestResults(updated)
-      }
-      await saveSubmission() // still empty
-      return
+    } else {
+      toast.success("🎉 All test cases passed!")
     }
+
+    await saveSubmission()
   }
-
-  // All passed
-
-  toast.success("🎉 All test cases passed!")
-  await saveSubmission()
 }
+
+
+
 
  const fnMutations = Object.fromEntries(
   FUNCTION_META.map((meta) => [meta.id, (api.f as any)[meta.id].useMutation()])
@@ -289,9 +368,10 @@ const handleTestRun = async () => {
 }
 const handleSubmitCode = async () => {
     setClickedSubmit(true)
-    updateSubmittedAt();
     await handleTest({ fnMutations, runVisible: false })
 }
+
+
 
 useEffect(() => {
   const savedCode = localStorage.getItem("question-code")
@@ -313,10 +393,14 @@ useEffect(() => {
     const now = DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss")
     setSubmittedAt(now)
   }
+const filteredSubmissions = useMemo(
+  () => questionData?.submissions?.filter(Boolean) ?? [],
+  [questionData?.submissions]
+);
   return (
     <div
       className={clsx(
-        "relative top-0 left-0 h-full z-50 transition-all duration-300 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg overflow-y-auto",
+        "relative top-0 left-0 h-full z-50 transition-all duration-300 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg overflow-y-hidden",
         isOpen ? "w-[520px]" : "w-10"
       )}
     >
@@ -371,7 +455,7 @@ useEffect(() => {
                 <Button
                   onClick={handleQuestionSelection}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-lg"
-                  disabled={!questionCode.trim() || isPending}
+                  disabled={!questionCode.trim() || isQuestionPending}
                 >
                   <Search className="w-5 h-5 mr-2" />
                   {isPending ? "Loading..." : "Load Question"}
@@ -504,14 +588,20 @@ useEffect(() => {
        </div>
      </>
    )}
+  
+                  
+
                     <Button
                       variant="secondary"
-                      className="w-full mt-6 text-lg"
+                      className="w-full mt-6 text-lg bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900"
                       disabled={!!hasEnded}
                       onClick={handleSubmitCode}
                     >
                       Submit Code
                     </Button>
+                                        <SubmissionHistory submissions={filteredSubmissions} />
+
+
                   </>
                 )}
               </>

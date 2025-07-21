@@ -8,7 +8,7 @@ type TestCase = {
 
 type FailedTestCase = {
   input: string
-  output: string | null
+  output: string 
   expected: string
   originalIdx: number
 } | null

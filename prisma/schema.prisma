@@ -79,8 +79,8 @@ model Question {
   title       String
   description String
   difficulty  String
-  startTime   DateTime?
-  endTime     DateTime?
+  startTime   DateTime
+  endTime     DateTime
   createdAt   DateTime     @default(now())
 
   testCases    TestCase[]
@@ -110,23 +110,28 @@ model Team {
   questions    Question[]    @relation("TeamQuestions")
 }
 
-
 model Submission {
-  id              String     @id @default(cuid())
-  team            Team       @relation(fields: [teamId], references: [id])
-  teamId          String
-  question        Question   @relation(fields: [questionId], references: [id])
-  questionId      String
-  codeSubmitted   String     // Actual code string
-  passedCount     Int        @default(0)
-  failedCount     Int        @default(0)
-  allPassed       Boolean    @default(false)
-  createdAt       DateTime   @default(now())
+  id               Int      @id @default(autoincrement())
+  submissionCode    String?     @unique
 
-  failedTestCases Json?
-  revealedHidden  Boolean    @default(false)
+  team              Team       @relation(fields: [teamId], references: [id])
+  teamId            String
+
+  question          Question   @relation(fields: [questionId], references: [id])
+  questionId        String
+
+  createdAt         DateTime @default(now()) @updatedAt
+
+  worksheet         Json       // Includes worksheetId, nodes, edges, etc.
+
+  passedTestCases   Int        @default(0)
+  totalTestCases    Int        @default(0)
+  allPassed         Boolean    @default(false)
+
+  failedTestCases   Json?      // Only failed test cases
 
   leaderboardEntries LeaderboardEntry[]
+
 }
 
 
@@ -137,7 +142,7 @@ model LeaderboardEntry {
   question     Question   @relation(fields: [questionId], references: [id])
   questionId   String
   submission   Submission @relation(fields: [submissionId], references: [id])
-  submissionId String
+  submissionId Int
   rank         Int
   submittedAt  DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

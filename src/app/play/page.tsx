@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Plus, Play, Save, Download } from "lucide-react"
+import { Plus, Play, Save, Download , XIcon} from "lucide-react"
 import WorksheetCanvas from "@/components/worksheet-canvas"
 import FunctionLibrary from "@/components/function-library"
 import QuestionCard from "@/components/questionCard"
@@ -20,6 +20,7 @@ interface Worksheet {
 }
 
 export default function CodeWhispersApp() {
+  
 
 const { autoSave, setAutoSave, showTestPanel, setShowTestPanel, isLibFunctionsOpen, QuestionCardOpen } = usePlaySettings();
   const [worksheets, setWorksheets] = useState<Worksheet[]>([])
@@ -111,6 +112,25 @@ useEffect(() => {
   }, [])
 
   const currentWorksheet = worksheets.find((ws) => ws.id === activeWorksheet)
+const removeWorksheet = (id: string) => {
+  localStorage.removeItem(`worksheet-${id}`)
+
+  const updated = worksheets.filter(ws => ws.id !== id)
+  setWorksheets(updated)
+
+  // If active worksheet was deleted, switch to the first one or null
+  if (activeWorksheet === id) {
+    if (updated.length > 0 && updated[0]) {
+      setActiveWorksheet(updated[0].id)
+    } else {
+      setActiveWorksheet(null)
+    }
+  }
+
+  // Optional: reload the page if you want a full refresh
+  // location.reload()
+}
+
 
   return (
     <div className="h-[calc(100vh-100px)] sm:h-[calc(100vh-80px)] lg:h-[calc(100vh-64px)] flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-950">
@@ -145,12 +165,30 @@ useEffect(() => {
               <div className="flex items-center gap-2">
                 {/* Changed TabsList to flex with overflow-x-auto */}
                 <TabsList className="flex w-auto overflow-x-auto whitespace-nowrap">
-                  {worksheets.map((worksheet) => (
-                    <TabsTrigger key={worksheet.id} value={worksheet.id} className="px-4">
-                      {worksheet.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+                {worksheets.map((worksheet) => (
+                <TabsTrigger
+                  key={worksheet.id}
+                  value={worksheet.id}
+                  className="px-4 flex items-center gap-2 group relative"
+                >
+                  {worksheet.name}
+                  {worksheets.length > 1 && (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeWorksheet(worksheet.id)
+                      }}
+                      className="ml-1 text-red-500 hover:text-red-700 transition cursor-pointer opacity-100 group-hover:opacity-50"
+                      title="Close"
+                    >
+                      <XIcon className="w-4 h-4" />
+                    </span>
+                  )}
+                </TabsTrigger>
+
+                ))}
+              </TabsList>
+
                 <Button variant="ghost" size="sm" onClick={addWorksheet} className="ml-2">
                   <Plus className="w-4 h-4" />
                 </Button>

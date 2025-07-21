@@ -23,5 +23,9 @@ export const FUNCTION_META = [
   { id: "fn19", category: "Math", icon: Function, description: "", numInputs: 1, inputTypes: ["number"], outputType: "number" },
   { id: "fn20", category: "Logic", icon: Function, description: "", numInputs: 1, inputTypes: ["number"], outputType: "boolean" },
 ]
+export const SOLUTION_FUNCTIONS = [
+  { id: "Q002S", questionCode: "Q001", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
+  { id: "Q003S", questionCode: "Q003", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" }
+]
 
 export const CATEGORIES = ["All", "Math", "Logic"]
