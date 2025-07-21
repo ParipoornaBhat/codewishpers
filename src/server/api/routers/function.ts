@@ -25,7 +25,7 @@ export const functionRouter = createTRPCRouter({
 
 
   //SOLUTION FUNCTIONS
-  Q002S: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] * 2 ),
+  Q002S: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] * 50 ),
   Q003S: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] ** 2 ),
   
 })
