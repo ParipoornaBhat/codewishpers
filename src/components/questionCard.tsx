@@ -109,12 +109,13 @@ const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
   }
 
   setQuestionData(formattedData)
+  if(!clickedSubmit){
   setTestCases(
     formattedData.testCases.map(tc => ({
       ...tc,
       isVisible: typeof tc.isVisible === "boolean" ? tc.isVisible : true // default to true if missing
     }))
-  )
+  )}
 },
     onError: (err) => {
       toast.error(`Failed to load question: ${err.message}`)
@@ -165,11 +166,12 @@ const end = questionData?.endTime ? DateTime.fromISO(questionData.endTime).setZo
         return "bg-gray-200 text-gray-800"
     }
   }
-  useEffect(() => {
-    if (questionData?.testCases) {
-      setTestResults(Array(questionData.testCases.length).fill(null));
-    }
-  }, [questionData?.testCases]);
+  // useEffect(() => {
+  //   if (questionData?.testCases && !clickedSubmit) {
+      
+  //     setTestResults(Array(questionData.testCases.length).fill(null));
+  //   }
+  // }, [questionData?.testCases]);
   
 const { mutate: saveSubmissionMutation, isPending } = api.submission.save.useMutation({
   onSuccess: (data) => {
@@ -367,8 +369,10 @@ const handleTestRun = async () => {
   await handleTest({ fnMutations, runVisible: true })
 }
 const handleSubmitCode = async () => {
-    setClickedSubmit(true)
     await handleTest({ fnMutations, runVisible: false })
+    selectQuestion({ code: questionData?.code || "" })
+    setClickedSubmit(true)
+
 }
 
 
