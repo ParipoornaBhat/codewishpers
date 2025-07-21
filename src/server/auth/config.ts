@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-
+import { adminAccounts } from "@/lib/admin"; // ✅ import admin metadata
+import { db } from "@/server/db";
 // --- Type augmentation ---
 declare module "next-auth" {
   interface Session {
@@ -9,6 +10,8 @@ declare module "next-auth" {
       teamName: string;
       role: string;
       permissions: string[];
+      email?: string | null;
+      emailVerified?: Date | null;
     };
   }
 
@@ -17,36 +20,82 @@ declare module "next-auth" {
     teamName: string;
     role: string;
     permissions: string[];
+    email?: string | null;
   }
 }
 
 export const authConfig: NextAuthConfig = {
   providers: [
-    CredentialsProvider({
-      id: "team-login",
-      name: "Team Login",
-      credentials: {
-        teamName: { label: "Team Name", type: "text" },
-      },
-      async authorize(credentials: Partial<Record<"teamName", unknown>>, req: Request) {
-        const teamName = typeof credentials?.teamName === "string" ? credentials.teamName.trim() : "";
+    // ✅ Team login (teamName only)
+   CredentialsProvider({
+  id: "team-login",
+  name: "Team Login",
+  credentials: {
+    teamName: { label: "Team Name", type: "text" },
+  },
+  async authorize(credentials) {
+    const teamName =
+      typeof credentials?.teamName === "string"
+        ? credentials.teamName.trim()
+        : "";
 
-        if (!teamName) return null;
+    if (!teamName) return null;
 
-        // Simulate user object based on team name only
-        return {
-          id: teamName.toLowerCase().replace(/\s+/g, "-"),
-          teamName,
-          role: "TEAM",
-          permissions: [], // Or: ['VIEW_DASHBOARD'], etc.
-        };
+    // ✅ Check in DB if this team exists
+    const team = await db.team.findFirst({
+      where: {
+        name: teamName,
       },
-    }),
+    });
+
+    if (!team) return null;
+
+    return {
+      id: team.id,
+      teamName: team.name,
+      role: "TEAM",
+      permissions: [], // add if needed
+    };
+  },
+}),
+
+    // ✅ Admin login (userId + password + specific permissions)
+CredentialsProvider({
+  id: "admin-login",
+  name: "Admin Login",
+  credentials: {
+    userId: { label: "Admin ID", type: "text" },
+    password: { label: "Password", type: "password" },
+  },
+  async authorize(credentials) {
+    const userId =
+      typeof credentials?.userId === "string" ? credentials.userId.trim() : "";
+    const password =
+      typeof credentials?.password === "string" ? credentials.password : "";
+
+    if (!userId || !password) return null;
+
+    const admin = adminAccounts.find((a) => a.id === userId);
+
+    if (!admin) return null;
+    if (admin.password !== password) return null;
+
+    return {
+      id: admin.id,
+      teamName: admin.teamName,
+      role: "ADMIN",
+      permissions: admin.permissions,
+    };
+  },
+}),
+
   ],
+
   session: {
     strategy: "jwt",
     maxAge: 24 * 60 * 60, // 1 day
   },
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -57,6 +106,7 @@ export const authConfig: NextAuthConfig = {
       }
       return token;
     },
+
     async session({ session, token }) {
       session.user = {
         id: token.id as string,
@@ -69,7 +119,22 @@ export const authConfig: NextAuthConfig = {
       return session;
     },
   },
+
   pages: {
-    signIn: "/auth/signin", // your custom team login page
+    signIn: "/auth/signin",
   },
+
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: true,
+        path: "/",
+      },
+    },
+  },
+
+  trustHost: true,
 };

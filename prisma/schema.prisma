@@ -72,3 +72,78 @@ model VerificationToken {
 
     @@unique([identifier, token])
 }
+model Question {
+  id          String       @id @default(cuid())
+  number      Int          @unique @default(autoincrement())
+  code        String       @unique
+  title       String
+  description String
+  difficulty  String
+  startTime   DateTime
+  endTime     DateTime
+  createdAt   DateTime     @default(now())
+
+  testCases    TestCase[]
+  submissions  Submission[]
+  leaderboard  LeaderboardEntry[]
+
+  teams        Team[]       @relation("TeamQuestions")
+}
+
+model TestCase {
+  id         String   @id @default(cuid())
+  input      String
+  expected   String
+  isVisible  Boolean  @default(false)   // Hidden by default
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+}
+
+model Team {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  createdAt    DateTime      @default(now())
+
+  submissions  Submission[]
+  leaderboard  LeaderboardEntry[]
+
+  questions    Question[]    @relation("TeamQuestions")
+}
+
+model Submission {
+  id               Int      @id @default(autoincrement())
+  submissionCode    String?     @unique
+
+  team              Team       @relation(fields: [teamId], references: [id])
+  teamId            String
+
+  question          Question   @relation(fields: [questionId], references: [id])
+  questionId        String
+
+  createdAt         DateTime @default(now()) @updatedAt
+
+  worksheet         Json       // Includes worksheetId, nodes, edges, etc.
+
+  passedTestCases   Int        @default(0)
+  totalTestCases    Int        @default(0)
+  allPassed         Boolean    @default(false)
+
+  failedTestCases   Json?      // Only failed test cases
+
+  leaderboardEntries LeaderboardEntry[]
+
+}
+
+
+model LeaderboardEntry {
+  id           String     @id @default(cuid())
+  team         Team       @relation(fields: [teamId], references: [id])
+  teamId       String
+  question     Question   @relation(fields: [questionId], references: [id])
+  questionId   String
+  submission   Submission @relation(fields: [submissionId], references: [id])
+  submissionId Int
+  rank         Int
+  submittedAt  DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}

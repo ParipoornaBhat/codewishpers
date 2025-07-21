@@ -24,23 +24,82 @@ import InputNode from "./input-node"
 import OutputNode from "./output-node"
 import { Button } from "@/components/ui/button"
 import { RotateCcw, Eraser, Trash2, MousePointer, Lock, Unlock } from "lucide-react"
+import { useWorksheetStore } from "@/lib/stores/useWorksheetStore"
 
 const nodeTypes = {
   function: FunctionNode,
   input: InputNode,
   output: OutputNode,
 }
-
-
-
 interface WorksheetCanvasProps {
   worksheetId: string
   initialNodes: Node[]
   initialEdges: Edge[]
   onUpdate: (id: string, nodes: Node[], edges: Edge[]) => void
+  autoSave :boolean
 }
 
-function WorksheetCanvasInner({ worksheetId, initialNodes, initialEdges, onUpdate }: WorksheetCanvasProps) {
+function WorksheetCanvasInner({ worksheetId, initialNodes, initialEdges, onUpdate, autoSave}: WorksheetCanvasProps) {
+
+//auto save funtionality using localStorage
+// 🧠 LocalStorage keys scoped by worksheetId
+
+const getLocalKey = (id: string) => `worksheet-${id}`
+
+const saveToLocalStorage = (id: string, nodes: Node[], edges: Edge[]) => {
+  if(autoSave){
+  try {
+    localStorage.setItem(
+      getLocalKey(id),
+      JSON.stringify({ nodes, edges })
+    )
+    const key = getLocalKey(id);
+    const data = { nodes, edges };
+
+localStorage.setItem(key, JSON.stringify(data));
+console.log("Stored worksheet:", data);
+  } catch (e) {
+    console.warn("📦 Failed to save worksheet to localStorage", e)
+  }}
+
+//stores in zustand as well
+useWorksheetStore.getState().setWorksheet(worksheetId, nodes, edges)
+
+
+}
+const loadFromLocalStorage = (id: string): { nodes: Node[]; edges: Edge[] } | null => {
+  try {
+    const raw = localStorage.getItem(getLocalKey(id))
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed.nodes) && Array.isArray(parsed.edges)) {
+      return parsed
+    }
+  } catch (e) {
+    console.warn("📦 Failed to load worksheet from localStorage", e)
+  }
+  return null
+}
+
+ //New: Save to localStorage
+useEffect(() => {
+  const saved = loadFromLocalStorage(worksheetId)
+  if (saved) {
+    setNodes(saved.nodes)
+    setEdges(saved.edges)
+    useWorksheetStore.getState().setWorksheet(worksheetId, saved.nodes, saved.edges)
+  } else {
+    setNodes(initialNodes)
+    setEdges(initialEdges)
+    useWorksheetStore.getState().setWorksheet(worksheetId, initialNodes, initialEdges)
+  }
+  // Reset previous input tracking too
+  
+  prevInputValRef.current = null
+  prevFuncInputEdgesRef.current = new Map()
+}, [worksheetId])
+
+// Others
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null)
@@ -52,10 +111,19 @@ function WorksheetCanvasInner({ worksheetId, initialNodes, initialEdges, onUpdat
   const prevFuncInputEdgesRef = useRef<Map<string, string[]>>(new Map())
 
   useEffect(() => {
+  const saved = loadFromLocalStorage(worksheetId)  //New: Save to localStorage
+  if (saved) {
+    setNodes(saved.nodes)
+    setEdges(saved.edges)
+  } else {
     setNodes(initialNodes)
     setEdges(initialEdges)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [worksheetId])
+  }
+  // Reset previous input tracking too
+  prevInputValRef.current = null
+  prevFuncInputEdgesRef.current = new Map()
+}, [worksheetId])
+
 
   // Execute the function chain whenever nodes or edges change
  useEffect(() => {
@@ -94,7 +162,10 @@ function WorksheetCanvasInner({ worksheetId, initialNodes, initialEdges, onUpdat
     const timeout = setTimeout(() => {
       executeChain()
       onUpdate(worksheetId, nodes, edges)
+     
+  saveToLocalStorage(worksheetId, nodes, edges)
 
+  //New: Save to localStorage
       // Update references
       prevInputValRef.current = inputVal
       prevFuncInputEdgesRef.current = currentFuncInputEdges
@@ -139,6 +210,10 @@ const refreshChain = () => {
     const timeout = setTimeout(() => {
       executeChain()
       onUpdate(worksheetId, nodes, edges)
+      
+  saveToLocalStorage(worksheetId, nodes, edges)
+
+
 
       prevInputValRef.current = inputVal
       prevFuncInputEdgesRef.current = currentFuncInputEdges
@@ -294,6 +369,8 @@ const updateNode = (id: string, data: Record<string, any>) => {
 
     const updatedEdges = addEdge(newEdge, edges)
     setEdges(updatedEdges)
+saveToLocalStorage(worksheetId, nodes, updatedEdges)
+useWorksheetStore.getState().setWorksheet(worksheetId, nodes, updatedEdges)
 
     setNodes((prevNodes) =>
       prevNodes.map((node) => {
@@ -428,20 +505,26 @@ const onDrop = useCallback(
   setTimeout(() => {
     executeChain()
     onUpdate(worksheetId, cleared, edges)
-
+   
+    saveToLocalStorage(worksheetId, cleared, edges)
     refreshChain()
   }, 0)
 }
 
-
   const clearAllConnections = () => {
     setEdges([])
     resetWorksheet()
+        
+    saveToLocalStorage(worksheetId, nodes, []) // no edges
+        
   }
 
   const clearAllNodes = () => {
     setNodes((nds) => nds.filter((node) => node.type === "input" || node.type === "output"))
     setEdges([])
+        
+    saveToLocalStorage(worksheetId, [], [])
+        
   }
 
   const toggleEraserMode = () => {
@@ -453,12 +536,27 @@ const onDrop = useCallback(
   }
 
   const handleDeleteNode = useCallback(
-    (nodeId: string) => {
-      setNodes((nds) => nds.filter((node) => node.id !== nodeId))
-      setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId))
-    },
-    [setNodes, setEdges],
-  )
+  (nodeId: string) => {
+    setNodes((prevNodes) => {
+      const updatedNodes = prevNodes.filter((node) => node.id !== nodeId)
+
+      setEdges((prevEdges) => {
+        const updatedEdges = prevEdges.filter(
+          (edge) => edge.source !== nodeId && edge.target !== nodeId
+        )
+        // Save to localStorage using updated versions
+           
+        saveToLocalStorage(worksheetId, updatedNodes, updatedEdges)
+            
+        return updatedEdges
+      })
+
+      return updatedNodes
+    })
+  },
+  [worksheetId]
+)
+
 
   // Update edge styles based on eraser mode
   const styledEdges = edges.map((edge) => ({
@@ -605,6 +703,7 @@ const onDrop = useCallback(
           inversePan={false}
         />
       </ReactFlow>
+
     </div>
   )
 }
