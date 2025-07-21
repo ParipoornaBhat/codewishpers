@@ -92,6 +92,7 @@ const { mutate: deleteQuestion, isPending: isDeleting } = api.question.delete.us
         endTime: "",
       })
       setTestCases([{ id: nanoid(), input: "", expectedOutput: "", isVisible: true }])
+      window.location.reload() // Refresh the page to show new question
     },
     onError: (err) => {
       toast.error(err.message || "Something went wrong.")

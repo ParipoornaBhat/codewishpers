@@ -136,68 +136,71 @@ export const questionRouter = createTRPCRouter({
 
   // CREATE NEW QUESTION
    create: protectedProcedure
-    .input(
-      z.object({
-        title: z.string().min(3),
-        description: z.string().min(3),
-        difficulty: z.string().min(1),
-        startTime: z.date().optional(),
-        endTime: z.date().optional(),
-        testCases: z
-          .array(
-            z.object({
-              input: z.string().min(1),
-              expected: z.string().min(1),
-              isVisible: z.boolean(),
-            })
-          )
-          .min(1, "At least one test case is required"),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const {
-        title,
-        description,
-        difficulty,
-        startTime,
-        endTime,
-        testCases,
-      } = input
+  .input(
+    z.object({
+      title: z.string().min(3),
+      description: z.string().min(3),
+      difficulty: z.string().min(1),
+      startTime: z.date().optional(),
+      endTime: z.date().optional(),
+      testCases: z
+        .array(
+          z.object({
+            input: z.string().min(1),
+            expected: z.string().min(1),
+            isVisible: z.boolean(),
+          })
+        )
+        .min(1, "At least one test case is required"),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    const {
+      title,
+      description,
+      difficulty,
+      startTime,
+      endTime,
+      testCases,
+    } = input
 
-      // Step 1: Create the Question with dummy code
-      const question = await ctx.db.question.create({
-        data: {
-          title,
-          description,
-          difficulty,
-          startTime,
-          endTime,
-          code: "TEMP",
-        },
-      })
+    // Step 1: Prepare the data object
+    const data: any = {
+      title,
+      description,
+      difficulty,
+      code: "TEMP",
+    }
 
-      // Step 2: Generate proper code
-      const paddedNumber = String(question.number).padStart(3, "0")
-      const finalCode = `Q${paddedNumber}`
+    if (startTime) data.startTime = startTime
+    if (endTime) data.endTime = endTime
 
-      // Step 3: Update the question with the final code
-      const updatedQuestion = await ctx.db.question.update({
-        where: { id: question.id },
-        data: { code: finalCode },
-      })
+    // Step 2: Create the Question with dummy code
+    const question = await ctx.db.question.create({ data })
 
-      // Step 4: Create associated test cases
-      await ctx.db.testCase.createMany({
-        data: testCases.map((tc) => ({
-          input: tc.input,
-          expected: tc.expected,
-          isVisible: tc.isVisible,
-          questionId: question.id,
-        })),
-      })
+    // Step 3: Generate proper code using `question.number`
+    const paddedNumber = String(question.number).padStart(3, "0")
+    const finalCode = `Q${paddedNumber}`
 
-      return { ...updatedQuestion }
-    }),
+    // Step 4: Update the question with the final code
+    const updatedQuestion = await ctx.db.question.update({
+      where: { id: question.id },
+      data: { code: finalCode },
+    })
+
+    // Step 5: Create associated test cases
+    await ctx.db.testCase.createMany({
+      data: testCases.map((tc) => ({
+        input: tc.input,
+        expected: tc.expected,
+        isVisible: tc.isVisible,
+        questionId: question.id,
+      })),
+    })
+
+    return { ...updatedQuestion }
+  }),
+
 
 
   delete: publicProcedure
@@ -255,11 +258,11 @@ update: publicProcedure
       startTime: z.date().nullable().optional(),
       endTime: z.date().nullable().optional(),
       code: z.string().optional(),
-      number: z.number().optional(),
+      number: z.number().optional(), // we'll discard this
       testCases: z
         .array(
           z.object({
-            id: z.string().optional(), // undefined for new test cases
+            id: z.string().optional(),
             input: z.string(),
             expected: z.string(),
             isVisible: z.boolean().optional(),
@@ -268,59 +271,65 @@ update: publicProcedure
         .optional(),
     })
   )
-.mutation(async ({ ctx, input }) => {
-  const { id, testCases = [], ...questionData } = input;
-  // 1. Sync TestCases
-  const existing = await ctx.db.testCase.findMany({
-    where: { questionId: id },
-    select: { id: true },
-  });
+  .mutation(async ({ ctx, input }) => {
+    const { id, testCases = [], number, ...rest } = input;
 
-  const existingIds = new Set(existing.map((tc) => tc.id));
-  const incomingIds = new Set(
-    testCases.map((tc) => tc.id).filter(Boolean) as string[]
-  );
+    // --- Filter out nulls to avoid Prisma type errors ---
+    const questionData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(rest)) {
+      if (value !== null && value !== undefined) {
+        questionData[key] = value;
+      }
+    }
 
-  const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
-
-  // 1.1 Delete test cases that are no longer present
-  if (toDelete.length > 0) {
-    await ctx.db.testCase.deleteMany({
-      where: { id: { in: toDelete } },
+    // --- Sync Test Cases ---
+    const existing = await ctx.db.testCase.findMany({
+      where: { questionId: id },
+      select: { id: true },
     });
-  }
 
-  // 1.2 Upsert test cases (create or update)
-  await Promise.all(
-    testCases.map((tc) =>
-      ctx.db.testCase.upsert({
-        where: { id: tc.id ?? "fake-id-to-force-create" }, // upsert requires `where`
-        update: {
-          input: tc.input,
-          expected: tc.expected,
-          isVisible: tc.isVisible ?? false,
-        },
-        create: {
-          input: tc.input,
-          expected: tc.expected,
-          isVisible: tc.isVisible ?? false,
-          questionId: id,
-        },
-      })
-    )
-  );
+    const existingIds = new Set(existing.map((tc) => tc.id));
+    const incomingIds = new Set(
+      testCases.map((tc) => tc.id).filter(Boolean) as string[]
+    );
 
-  // 2. Update the question
-  const updatedQuestion = await ctx.db.question.update({
-    where: { id },
-    data: {
-      ...questionData,
-    },
-    include: {
-      testCases: true,
-    },
-  });
+    const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
 
-  return updatedQuestion;
-}),
+    if (toDelete.length > 0) {
+      await ctx.db.testCase.deleteMany({
+        where: { id: { in: toDelete } },
+      });
+    }
+
+    await Promise.all(
+      testCases.map((tc) =>
+        ctx.db.testCase.upsert({
+          where: { id: tc.id ?? "__INVALID_ID__" }, // force create
+          update: {
+            input: tc.input,
+            expected: tc.expected,
+            isVisible: tc.isVisible ?? false,
+          },
+          create: {
+            input: tc.input,
+            expected: tc.expected,
+            isVisible: tc.isVisible ?? false,
+            questionId: id,
+          },
+        })
+      )
+    );
+
+    const updatedQuestion = await ctx.db.question.update({
+      where: { id },
+      data: questionData,
+      include: {
+        testCases: true,
+      },
+    });
+
+    return updatedQuestion;
+  }),
+
+
 })
