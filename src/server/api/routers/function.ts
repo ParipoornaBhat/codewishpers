@@ -11,7 +11,7 @@ export const functionRouter = createTRPCRouter({
   fn7: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] % 2 === 0),
   fn8: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] % 2 !== 0),
   fn9: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] > 0),
-  fn10: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] * 10),
+  fn10: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] * 5),
   fn11: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => -input[0]),
   fn12: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => Math.abs(input[0])),
   fn13: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] + 1),
