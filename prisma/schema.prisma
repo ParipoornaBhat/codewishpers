@@ -146,4 +146,5 @@ model LeaderboardEntry {
   rank         Int
   submittedAt  DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+    @@unique([teamId, questionId])
 }

@@ -517,7 +517,7 @@ const { mutate: deleteQuestion, isPending: isDeleting } = api.question.delete.us
 )}
 </DialogContent>
 </Dialog>
-                        <Link href={`/${question.code}/leaderboard`} className="flex-1">
+                        <Link href={`/dashboard/${question.code}/leaderboard`} className="flex-1">
                           <Button variant="outline" size="sm" className="w-full bg-transparent">
                             <Users className="w-4 h-4 mr-2" />
                             Leaderboard

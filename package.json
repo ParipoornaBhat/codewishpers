@@ -7,6 +7,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "scripts": {
+     "socket": "npx nodemon server/socket-server.ts",
     "build": "next build --no-lint",
     "build:ci": "next build --no-lint",
     "check": "next lint && tsc --noEmit",
@@ -49,6 +50,7 @@
     "date-fns": "^4.1.0",
     "docxtemplater": "^3.65.0",
     "docxtemplater-image-module-free": "^1.1.1",
+    "dotenv": "^17.2.0",
     "framer-motion": "^12.15.0",
     "gsap": "^3.13.0",
     "lucide-react": "^0.511.0",
@@ -68,6 +70,8 @@
     "react-toastify": "^11.0.5",
     "reactflow": "^11.11.4",
     "server-only": "^0.0.1",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "sonner": "^2.0.5",
     "streamifier": "^0.1.1",
     "superjson": "^2.2.1",

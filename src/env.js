@@ -15,7 +15,7 @@ export const env = createEnv({
 
     // AUTH_DISCORD_ID: z.string(),
     // AUTH_DISCORD_SECRET: z.string(),
-
+    SOCKET_URL: z.string().url().default("http://localhost:3003"),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -27,6 +27,8 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
+      NEXT_PUBLIC_SOCKET_URL: z.string().url().default("http://localhost:3003"),
+  
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
   },
 
@@ -38,7 +40,9 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     // AUTH_DISCORD_ID: process.env.AUTH_DISCORD_ID,
     // AUTH_DISCORD_SECRET: process.env.AUTH_DISCORD_SECRET,
+    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3003",
     NODE_ENV: process.env.NODE_ENV,
+    SOCKET_URL: process.env.SOCKET_URL || "http://localhost:3003",
   },
 
   /**
