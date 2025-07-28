@@ -71,16 +71,33 @@ export const executeGraphAndCheckOutput = async ({
 
     prerequisitesCount.set(edge.target, (prerequisitesCount.get(edge.target) || 0) + 1)
   }
+  // Step 1: Discover reachable nodes from the input node
+const reachable = new Set<string>()
+const stack = [inputNode.id]
 
-  const readyQueue: string[] = []
-  const allNodeIds = new Set(nodes.map((n) => n.id))
+while (stack.length > 0) {
+  const current = stack.pop()!
+  if (reachable.has(current)) continue
+  reachable.add(current)
 
-  for (const nodeId of allNodeIds) {
-    if ((prerequisitesCount.get(nodeId) || 0) === 0) {
-      readyQueue.push(nodeId)
+  const neighbors = edges
+    .filter((e) => e.source === current)
+    .map((e) => e.target)
+  
+  for (const n of neighbors) {
+    if (!reachable.has(n)) {
+      stack.push(n)
     }
   }
+}
 
+// Step 2: Populate readyQueue only with reachable and input-prerequisite-satisfied nodes
+const readyQueue: string[] = []
+for (const nodeId of reachable) {
+  if ((prerequisitesCount.get(nodeId) || 0) === 0) {
+    readyQueue.push(nodeId)
+  }
+}
   while (readyQueue.length > 0) {
     const currentId = readyQueue.shift()!
     const currentNode = idToNode.get(currentId)
