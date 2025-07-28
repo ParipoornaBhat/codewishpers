@@ -8,7 +8,7 @@ export const functionRouter = createTRPCRouter({
   fn4: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] * 2),
   fn5: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] / 2),
   fn6: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => Math.sqrt(input[0])),
-  fn7: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] + 10),
+  fn7: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] * 10),
   fn8: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] % 2 !== 0),
   fn9: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] > 0),
   fn10: publicProcedure.input(z.tuple([z.number()])).mutation(({ input }) => input[0] * 5),
