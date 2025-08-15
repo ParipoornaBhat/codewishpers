@@ -112,10 +112,15 @@ const [open, setOpen] = useState(false);
               Round 2
             </Link>
           )}
-         {role === "ADMIN" && (
+         {role === "ADMIN" && (<>
       <Link href="/dashboard" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
         Dashboard
       </Link>
+           <Link href="/dashboard/leaderboard" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
+        Leaderboard
+      </Link>
+
+</>
     )}
            
         </nav>

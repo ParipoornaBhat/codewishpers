@@ -89,12 +89,7 @@ const LeaderBoard = () => {
   if (!data) return <div className="text-center py-10 text-red-500">No data found.</div>;
 
   const { question, leaderboard } = data;
-  const sortedLeaderboard = [...leaderboard].sort((a, b) => {
-  if (b.testCasesPassed !== a.testCasesPassed) {
-    return b.testCasesPassed - a.testCasesPassed;
-  }
-  return new Date(a.submissionTime).getTime() - new Date(b.submissionTime).getTime();
-});
+
 
   type WorksheetData = {
    
@@ -150,85 +145,92 @@ const LeaderBoard = () => {
         </div>
 
         <div className="space-y-4">
-    
-       
+          <AnimatePresence>
+            {leaderboard.map((team, idx) => (
+              <motion.div
+                key={team.teamId}
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ type: "spring", duration: 0.5 }}
+              >
+                <Card
+                  className={`${leaderBoardFullScreen
+                    ? "bg-white/10 backdrop-blur border-white/20"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                  } transition-colors`}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3">
+                          {getRankIcon(idx + 1)}
+                          <div className="text-2xl font-bold">#{idx + 1}</div>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold">{team.teamName}</h3>
+                          <div className="flex items-center gap-4 text-sm">
+                            <span
+                              className={`flex items-center gap-1 ${
+                                team.testCasesPassed === team.totalTestCases
+                                  ? "text-green-400"
+                                  : "text-red-400"
+                              }`}
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              {team.testCasesPassed}/{team.totalTestCases} passed
+                            </span>
 
-                <AnimatePresence>
-  {sortedLeaderboard.map((team, idx) => (
-    <motion.div
-      key={team.teamId}
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ type: "spring", duration: 0.5 }}
-    >
-      <Card
-        className={`${leaderBoardFullScreen
-          ? "bg-white/10 backdrop-blur border-white/20"
-          : "hover:bg-gray-50 dark:hover:bg-gray-800"
-        } transition-colors`}
-      >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-3">
-                      {getRankIcon(idx + 1)}
-                      <div className="text-2xl font-bold">#{idx + 1}</div>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold">{team.teamName}</h3>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span
-                          className={`flex items-center gap-1 ${
-                            team.testCasesPassed === team.totalTestCases ? "text-green-400" : "text-red-400"
-                          }`}
+                            <span className="flex items-center gap-1 text-blue-400">
+                              <Clock className="w-4 h-4" />
+                              {formatTime(team.submissionTime)}
+                            </span>
+                            <span className="text-gray-300">
+                              {team.submissions} submissions
+                            </span>
+                            {team.points != null && (
+                              <span className="text-yellow-400 font-semibold">
+                                +{team.points} pts
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-yellow-400">
+                          {team.score.toFixed(2)}%
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="text-sm mt-2"
+                          onClick={() => {
+                            if (team.worksheet) {
+                              handleAddWorksheet(
+                                team.submissionId,
+                                (team.worksheet as any).worksheet
+                              );
+                            } else {
+                              console.warn(
+                                "No worksheet data available for submission:",
+                                team.submissionId
+                              );
+                            }
+                          }}
                         >
-                          <CheckCircle className="w-4 h-4" />
-                          {team.testCasesPassed}/{team.totalTestCases} passed
-                        </span>
-
-                        <span className="flex items-center gap-1 text-blue-400">
-                          <Clock className="w-4 h-4" />
-                          {formatTime(team.submissionTime)}
-                        </span>
-                        <span className="text-gray-300">{team.submissions} submissions</span>
+                          View Worksheet
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                 <div className="text-right">
-                  <div className="text-3xl font-bold text-yellow-400">{team.score.toFixed(2)}%</div>
-                  <Button
-                    variant="outline"
-                    className="text-sm mt-2"
-                    onClick={() => {
-                       if (team.worksheet) {
-                        handleAddWorksheet(
-                          team.submissionId,
-                        (team.worksheet as any).worksheet
-                        );
-                          } else {
-                        console.warn("No worksheet data available for submission:", team.submissionId);
-                      }
-                    }}
-                  >
-                    View Worksheet
-                  </Button>
-                </div>    
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
-                </div>
-              </CardContent>
-            <CardContent className="p-6">
-          {/* card content */}
-        </CardContent>
-      </Card>
-    </motion.div>
-  ))}
-</AnimatePresence>
         </div>
       </div>
     </div>
   );
 };
-
 export default LeaderBoard;

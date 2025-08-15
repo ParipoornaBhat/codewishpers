@@ -124,52 +124,108 @@ export const submissionRouter = createTRPCRouter({
         !bestExisting || updated.passedTestCases > bestExisting.passedTestCases;
 
       if (isBetter) {
-        await ctx.db.leaderboardEntry.upsert({
-          where: {
-            teamId_questionId: { teamId, questionId },
-          },
-          update: {
-            submissionId: updated.id,
-            updatedAt: new Date(),
-          },
-          create: {
-            teamId,
-            questionId,
-            submissionId: updated.id,
-          },
-        });
+  // First, upsert leaderboard entry (your existing code)
+  const lbEntry = await ctx.db.leaderboardEntry.upsert({
+    where: {
+      teamId_questionId: { teamId, questionId },
+    },
+    update: {
+      submissionId: updated.id,
+      updatedAt: new Date(),
+    },
+    create: {
+      teamId,
+      questionId,
+      submissionId: updated.id,
+    },
+  });
 
-        const question = await ctx.db.question.findUnique({
-          where: { id: questionId },
-          select: { code: true },
-        });
+  // Fetch question points config
+  const questionData = await ctx.db.question.findUnique({
+    where: { id: questionId },
+    select: {
+      winner: true,
+      runnerUp: true,
+      secondRunnerUp: true,
+      participant: true,
+    },
+  });
+  if (!questionData) throw new Error(`Question not found for ID: ${questionId}`);
 
-        if (!question) {
-          throw new Error(`Question not found for ID: ${questionId}`);
-        }
+  // Fetch all leaderboard entries for this question, including submission stats
+  const allEntries = await ctx.db.leaderboardEntry.findMany({
+    where: { questionId },
+    include: {
+      submission: true,
+    },
+  });
 
-        console.log(`📣 Emitting leaderboard update for question: ${question.code}`);
-        try {
-          const res = await fetch(`${process.env.SOCKET_URL}/emit-leaderboard-update`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ questionId: question.code }),
-          });
+  // Sort by passedTestCases desc, then by submittedAt asc
+  allEntries.sort((a, b) => {
+    if (b.submission.passedTestCases !== a.submission.passedTestCases) {
+      return b.submission.passedTestCases - a.submission.passedTestCases;
+    }
+    return a.submittedAt.getTime() - b.submittedAt.getTime();
+  });
 
-          if (!res.ok) {
-            const errorText = await res.text().catch(() => "No response body");
-            console.log(
-              `❌ Failed to emit leaderboard update: ${res.status} ${res.statusText} - ${errorText}`
-            );
-          } else {
-            console.log("✅ Leaderboard update emitted successfully");
-          }
-        } catch (error: any) {
-          console.warn("🚨 Failed to connect to socket server:", error.message || error);
-        }
-      } else {
-        console.log("⏩ Submission saved but not better — leaderboard not updated");
+  // Assign ranks & points based on sorted order
+    const updates = allEntries.map((entry, index) => {
+      const hasPassedAny = entry.submission.passedTestCases > 0;
+
+      let rank: number | null = null;
+      let points = 0;
+
+      if (hasPassedAny) {
+        rank = index + 1;
+
+        if (rank === 1) points = questionData.winner;
+        else if (rank === 2) points = questionData.runnerUp;
+        else if (rank === 3) points = questionData.secondRunnerUp;
+        else points = questionData.participant;
       }
+
+      return ctx.db.leaderboardEntry.update({
+        where: { id: entry.id },
+        data: {
+          rank,
+          points,
+        },
+      });
+    });
+
+
+  // Run updates in parallel
+  await Promise.all(updates);
+
+  // Continue your socket emit code...
+  const question = await ctx.db.question.findUnique({
+    where: { id: questionId },
+    select: { code: true },
+  });
+  if (!question) throw new Error(`Question not found for ID: ${questionId}`);
+
+  console.log(`📣 Emitting leaderboard update for question: ${question.code}`);
+  try {
+    const res = await fetch(`${process.env.SOCKET_URL}/emit-leaderboard-update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionId: question.code }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "No response body");
+      console.log(
+        `❌ Failed to emit leaderboard update: ${res.status} ${res.statusText} - ${errorText}`
+      );
+    } else {
+      console.log("✅ Leaderboard update emitted successfully");
+    }
+  } catch (error: any) {
+    console.warn("🚨 Failed to connect to socket server:", error.message || error);
+  }
+} else {
+  console.log("⏩ Submission saved but not better — leaderboard not updated");
+}
 
       return updated;
     }),

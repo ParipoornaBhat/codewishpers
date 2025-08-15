@@ -108,7 +108,6 @@ model Team {
   id           String        @id @default(cuid())
   name         String        @unique
   createdAt    DateTime      @default(now())
-  points      Int           @default(0)
 
   submissions  Submission[]
   leaderboard  LeaderboardEntry[]
@@ -149,6 +148,9 @@ model LeaderboardEntry {
   questionId   String
   submission   Submission @relation(fields: [submissionId], references: [id])
   submissionId Int
+  
+  rank         Int?
+  points       Int @default(0)
 
   submittedAt  DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

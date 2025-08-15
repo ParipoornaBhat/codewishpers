@@ -223,11 +223,11 @@ update: publicProcedure
       startTime: z.date().nullable().optional(),
       endTime: z.date().nullable().optional(),
       code: z.string().optional(),
-      winner: z.number().min(0).optional(),           // new
-      runnerUp: z.number().min(0).optional(),         // new
-      secondRunnerUp: z.number().min(0).optional(),   // new
-      participant: z.number().min(0).optional(),      // new
-      number: z.number().optional(), // we'll discard this
+      winner: z.number().min(0).optional(),
+      runnerUp: z.number().min(0).optional(),
+      secondRunnerUp: z.number().min(0).optional(),
+      participant: z.number().min(0).optional(),
+      number: z.number().optional(),
       testCases: z
         .array(
           z.object({
@@ -289,6 +289,17 @@ update: publicProcedure
       )
     );
 
+    // Fetch old points before update
+    const oldQuestion = await ctx.db.question.findUnique({
+      where: { id },
+      select: {
+        winner: true,
+        runnerUp: true,
+        secondRunnerUp: true,
+        participant: true,
+      },
+    });
+
     const updatedQuestion = await ctx.db.question.update({
       where: { id },
       data: questionData,
@@ -296,6 +307,47 @@ update: publicProcedure
         testCases: true,
       },
     });
+
+    // --- If points config changed, update leaderboard entries ---
+    const pointsChanged =
+      (rest.winner !== undefined && rest.winner !== oldQuestion?.winner) ||
+      (rest.runnerUp !== undefined && rest.runnerUp !== oldQuestion?.runnerUp) ||
+      (rest.secondRunnerUp !== undefined &&
+        rest.secondRunnerUp !== oldQuestion?.secondRunnerUp) ||
+      (rest.participant !== undefined &&
+        rest.participant !== oldQuestion?.participant);
+
+    if (pointsChanged) {
+  const leaderboardEntries = await ctx.db.leaderboardEntry.findMany({
+    where: { questionId: id },
+    include: {
+      submission: {
+        select: { passedTestCases: true },
+      },
+    },
+    orderBy: { rank: "asc" },
+  });
+
+  await Promise.all(
+    leaderboardEntries.map((entry) => {
+      const hasPassedAny = entry.submission?.passedTestCases > 0;
+
+      let points = 0; // default no points if failed all
+      if (hasPassedAny) {
+        if (entry.rank === 1) points = updatedQuestion.winner;
+        else if (entry.rank === 2) points = updatedQuestion.runnerUp;
+        else if (entry.rank === 3) points = updatedQuestion.secondRunnerUp;
+        else points = updatedQuestion.participant;
+      }
+
+      return ctx.db.leaderboardEntry.update({
+        where: { id: entry.id },
+        data: { points },
+      });
+    })
+  );
+}
+
 
     return updatedQuestion;
   }),
