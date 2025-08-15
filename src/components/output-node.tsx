@@ -45,8 +45,8 @@ export default function OutputNode({ data }: OutputNodeProps) {
             {hasValue ? (
               <div className="bg-white p-3 rounded-md border border-green-200 shadow-sm">
                 <div className="text-xs text-green-600 font-medium mb-1">Output Value:</div>
-                <div className="text-xl font-mono text-green-800 font-bold">{String(data.value)}</div>
-                <div className="text-xs text-green-500 mt-1">Type: {typeof data.value}</div>
+                <div className="text-xl font-mono text-green-800 font-bold">{JSON.stringify(data.value)}</div>
+                {/* <div className="text-xs text-green-500 mt-1">Type: {typeof data.value}</div> */}
               </div>
             ) : (
               <div className="bg-white p-3 rounded-md border border-gray-300 text-center shadow-sm">

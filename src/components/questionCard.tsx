@@ -48,15 +48,17 @@ type Submission = {
 }
 
 type QuestionData = {
-  id: string
-  title: string
-  description: string
-  testCases: TestCase[]
-  difficulty: string
+  success?: boolean
+  message?: string
+  id?: string
+  title?: string
+  description?: string
+  testCases?: TestCase[]
+  difficulty?: string
   startTime?: string | null
   endTime?: string | null
-  createdAt: string
-  code: string
+  createdAt?: string
+  code?: string
   submissions?: Submission[] | null
 }
 
@@ -111,13 +113,63 @@ const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
   setQuestionData(formattedData)
   if(!clickedSubmit){
   setTestCases(
-    formattedData.testCases.map(tc => ({
+    (formattedData.testCases ?? []).map(tc => ({
       ...tc,
       isVisible: typeof tc.isVisible === "boolean" ? tc.isVisible : true // default to true if missing
     }))
   )}
 },
     onError: (err) => {
+      handleReset();
+      toast.error(`Failed to load question: ${err.message}`)
+    },
+  })
+    const { mutate: selectQuestion2, isPending: isQuestionPending2 } = api.question.questionselect.useMutation({
+    onSuccess: (data) => {
+      if(data.success===false){
+        toast.error(`${data.message}`)
+        return
+      }
+
+  if (!data) {
+    toast.error("Invalid Question Code!")
+    return
+  }
+  
+  const formattedData: QuestionData = {
+    ...data,
+    submissions: data.submissions?.map((s) => ({
+      ...s,
+      createdAt: typeof s.createdAt === "string"
+        ? new Date(s.createdAt)
+        : s.createdAt,
+
+      submissionCode: s.submissionCode ?? "",
+
+      failedTestCases: Array.isArray(s.failedTestCases)
+        ? s.failedTestCases as {
+            input: string
+            output: string
+            expected: string
+            originalIdx: number
+          }[]
+        : [],
+    })) ?? [],
+  }
+
+  setQuestionData(formattedData)
+  if(!clickedSubmit){
+  setTestCases(
+    (formattedData.testCases ?? []).map(tc => ({
+      ...tc,
+      isVisible: typeof tc.isVisible === "boolean" ? tc.isVisible : true // default to true if missing
+    }))
+  )}
+      window.location.reload();
+
+},
+    onError: (err) => {
+      handleReset();
       toast.error(`Failed to load question: ${err.message}`)
     },
   })
@@ -132,7 +184,7 @@ const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
 
   const handleQuestionSelection = () => {
     if (!questionCode.trim()) return
-    selectQuestion({ code: questionCode.toUpperCase() })
+    selectQuestion2({ code: questionCode.toUpperCase() })
   }
 
   const handleReset = () => {
@@ -293,13 +345,13 @@ const handleTest = async ({
           fnMutations,
         })
 
-        if (typeof result === "undefined") {
-          if (!isHalted) {
-            isHalted = true
-            toast.error(`🛑 Execution halted: Output is undefined for Test #${idx + 1}`)
-          }
-          return
+       if (result === null || typeof result === "undefined") {
+        if (!isHalted) {
+          isHalted = true
+          toast.error(`🛑 Execution halted: Output is undefined for Test #${idx + 1}`)
         }
+        return
+      }
 
         updatedResults[idx] = passed
         updateTestResult(idx, passed)
@@ -442,28 +494,36 @@ const filteredSubmissions = useMemo(
             {!questionData ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="questionCode" className="text-lg">Question Code</Label>
-                  <Input
-                    id="questionCode"
-                    value={questionCode}
-                    onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
-                      setQuestionCode(value)
-                      localStorage.setItem("question-code", value)
+                  <form className=" space-y-2 gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault(); // prevent page reload
+                      handleQuestionSelection();
                     }}
-                    placeholder="Q001"
-                    className="text-md"
-                  />
+                  >
+                    <Label htmlFor="questionCode" className="text-lg">Question Code</Label>
+                    <Input
+                      id="questionCode"
+                      value={questionCode}
+                      onChange={(e) => {
+                        const value = e.target.value.toUpperCase();
+                        setQuestionCode(value);
+                        localStorage.setItem("question-code", value);
+                      }}
+                      placeholder="Q001"
+                      className="text-md"
+                    />
 
+                    <Button
+                      type="submit" // important for Enter key to trigger
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-lg"
+                      disabled={!questionCode.trim() || isQuestionPending || isQuestionPending2}
+                    >
+                      <Search className="w-5 h-5 mr-2" />
+                      {isPending ? "Loading..." : "Load Question"}
+                    </Button>
+                  </form>
                 </div>
-                <Button
-                  onClick={handleQuestionSelection}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-lg"
-                  disabled={!questionCode.trim() || isQuestionPending}
-                >
-                  <Search className="w-5 h-5 mr-2" />
-                  {isPending ? "Loading..." : "Load Question"}
-                </Button>
+                
               </>
             ) : (
               <>
@@ -494,13 +554,13 @@ const filteredSubmissions = useMemo(
                     <Card className="p-4 space-y-2">
                       <div className="flex justify-between items-start">
                         <h3 className="text-xl font-semibold">{questionData.title}</h3>
-                        <Badge className={getDifficultyColor(questionData.difficulty)}>
+                        <Badge className={getDifficultyColor(questionData.difficulty ?? "")}>
                           {questionData.difficulty}
                         </Badge>
                       </div>
                       <p className="text-base text-muted-foreground">{questionData.description}</p>
                       <div className="text-xs text-gray-500 space-y-1 pt-2">
-                        <p>Created: {DateTime.fromISO(questionData.createdAt).toLocaleString(DateTime.DATETIME_MED)}</p>
+                        <p>Created: {questionData.createdAt ? DateTime.fromISO(questionData.createdAt).toLocaleString(DateTime.DATETIME_MED) : "N/A"}</p>
                         <p>Start: {start?.toLocaleString(DateTime.DATETIME_MED) ?? "N/A"}</p>
                         <p>End: {end?.toLocaleString(DateTime.DATETIME_MED) ?? "N/A"}</p>
                       </div>
@@ -537,9 +597,6 @@ const filteredSubmissions = useMemo(
                           </div>
                         </Card>
                     ))}
-
-
-
                     </div>
                   </div>
 
@@ -592,9 +649,6 @@ const filteredSubmissions = useMemo(
        </div>
      </>
    )}
-  
-                  
-
                     <Button
                       variant="secondary"
                       className="w-full mt-6 text-lg bg-green-600 hover:bg-green-700 dark:bg-green-800 dark:hover:bg-green-900"

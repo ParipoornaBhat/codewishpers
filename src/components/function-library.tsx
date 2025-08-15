@@ -19,9 +19,16 @@ export default function FunctionLibrary() {
     return `Function #${num}`
   }
 
-  const filteredFunctions = FUNCTION_META.filter((func) =>
+ const filteredFunctions = FUNCTION_META
+  // First filter only fn1 to fn20
+  .filter(func => {
+    const match = func.id.match(/^fn(\d+)$/);
+    return match && Number(match[1]) >= 1 && Number(match[1]) <= 20;
+  })
+  // Then apply the search term filter
+  .filter(func =>
     getDisplayName(func.id).toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  );
 
   const onDragStart = (event: React.DragEvent, func: any) => {
     event.dataTransfer.setData("application/reactflow", "function")

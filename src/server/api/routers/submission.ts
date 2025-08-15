@@ -136,7 +136,6 @@ export const submissionRouter = createTRPCRouter({
             teamId,
             questionId,
             submissionId: updated.id,
-            rank: 0, // Add rank logic later if needed
           },
         });
 

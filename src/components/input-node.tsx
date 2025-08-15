@@ -13,13 +13,13 @@ interface InputNodeProps {
   data: {
     label: string
     value: string
-    result?: number | string | null
+    result?: string | number | null
   }
   id: string
 }
 
-export default function InputNode({ data, id }: InputNodeProps) {
-  const [expectedOutput, setExpectedOutput] = useState<number | string | null>(null)
+export default function InputNode({ data }: InputNodeProps) {
+  const [expectedOutput, setExpectedOutput] = useState<string | number | null>(null)
   const [value, setValue] = useState(data.value || "")
 
   const questionCode = useMemo(() => localStorage.getItem("question-code") || "", [])
@@ -29,32 +29,52 @@ export default function InputNode({ data, id }: InputNodeProps) {
     ? api.f[matchedFn.id as keyof typeof api.f].useMutation()
     : null
 
-  useEffect(() => {
-    if (!matchedFn || !dynamicMutation || !value || isNaN(Number(value))) {
-      setExpectedOutput(null)
-      return
-    }
+  // useEffect(() => {
+  //   if (!matchedFn || !dynamicMutation || value.trim() === "") {
+  //     setExpectedOutput(null)
+  //     return
+  //   }
 
-    const inputNumber = Number(value)
-    dynamicMutation.mutate([inputNumber] as any, {
-      onSuccess: (result: any) => {
-        setExpectedOutput(result)
-      },
-      onError: (err: any) => {
-        console.error("Expected output fetch failed", err)
-      },
-    })
+  //   dynamicMutation.mutate([value] as any, {
+  //     onSuccess: (result: any) => {
+  //       if (result.success) {
+  //         setExpectedOutput(result.result)
+  //       } else {
+  //         setExpectedOutput(`Error: ${result.error}`)
+  //       }
+  //     },
+  //     onError: (err: any) => {
+  //       setExpectedOutput(`Error: ${err.message || "Unknown error"}`)
+  //     },
+  //   })
 
-    data.value = value
-    data.result = inputNumber
-  }, [value])
+  //   data.value = value
+  //   data.result = value
+  // }, [value])
 
-  useEffect(() => {
-    if (value && !isNaN(Number(value))) {
-      data.value = value
-      data.result = Number(value)
-    }
-  }, [value, data])
+useEffect(() => {
+  data.value = value
+  data.result = value
+  
+  if (!matchedFn || !dynamicMutation || value.trim() === "") {
+    setExpectedOutput(null)
+    return
+  }
+
+  dynamicMutation.mutate([value] as any, {
+    onSuccess: (result: any) => {
+      if (result.success) {
+        setExpectedOutput(result.result)
+      } else {
+        setExpectedOutput(`Error: ${result.error}`)
+      }
+    },
+    onError: (err: any) => {
+      setExpectedOutput(`Error: ${err.message || "Unknown error"}`)
+    },
+  })
+}, [value])
+
 
   return (
     <div className="w-64 min-h-[200px] border border-blue-300 dark:border-blue-700 shadow-md bg-blue-50 dark:bg-slate-900 rounded-md overflow-hidden">
@@ -69,19 +89,19 @@ export default function InputNode({ data, id }: InputNodeProps) {
               </Label>
             </div>
 
-            {/* Input Field */}
+            {/* Input Field (as string) */}
             <Input
-              type="number"
+              type="text"
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder="Enter a number..."
+              placeholder="Enter input..."
               className="text-sm border border-blue-400 dark:border-blue-600 focus:border-blue-600 dark:focus:border-blue-400 rounded-md p-2 bg-white dark:bg-slate-800 dark:text-white"
             />
           </div>
 
           <div className="mt-4">
-            {/* If input is valid */}
-            {value && !isNaN(Number(value)) ? (
+            {/* If there is input */}
+            {value ? (
               <div className="p-3 bg-white dark:bg-slate-800 rounded-md border border-blue-200 dark:border-blue-500 shadow-sm">
                 <div className="flex items-center gap-2">
                   <Play className="w-3 h-3 text-blue-600 dark:text-blue-400" />
@@ -89,11 +109,22 @@ export default function InputNode({ data, id }: InputNodeProps) {
                     Current Input:
                   </div>
                 </div>
-                <div className="text-lg font-mono text-blue-800 dark:text-blue-100 mt-1">{value}</div>
+                <div className="text-lg font-mono text-blue-800 dark:text-blue-100 mt-1">
+                  {value}
+                </div>
 
-                {/* Show expected output or fallback */}
-                {matchedFn ? (
-                  expectedOutput !== null && (
+                {/* Show expected output or error */}
+                {expectedOutput !== null && (
+                  expectedOutput.toString().startsWith("Error") ? (
+                    <div className="mt-3 p-2 bg-red-50 dark:bg-red-900 rounded-md border border-red-300 dark:border-red-600 shadow-sm">
+                      <div className="text-xs font-medium text-red-600 dark:text-red-400">
+                        Error:
+                      </div>
+                      <div className="text-sm text-red-800 dark:text-red-300 mt-1">
+                        {expectedOutput}
+                      </div>
+                    </div>
+                  ) : (
                     <div className="mt-3 p-2 bg-green-50 dark:bg-green-900 rounded-md border border-green-300 dark:border-green-600 shadow-sm">
                       <div className="flex items-center gap-2">
                         <Play className="w-3 h-3 text-green-600 dark:text-green-400" />
@@ -106,18 +137,7 @@ export default function InputNode({ data, id }: InputNodeProps) {
                       </div>
                     </div>
                   )
-                ) : (
-                  <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900 rounded-md border border-yellow-300 dark:border-yellow-600 shadow-sm">
-                    <div className="text-xs font-medium text-yellow-700 dark:text-yellow-300">
-                      No question is set properly.
-                    </div>
-                  </div>
                 )}
-              </div>
-            ) : value && isNaN(Number(value)) ? (
-              <div className="p-3 bg-red-50 dark:bg-red-900 rounded-md border border-red-300 dark:border-red-600 shadow-sm">
-                <div className="text-xs font-medium text-red-600 dark:text-red-400">Invalid Input:</div>
-                <div className="text-sm text-red-800 dark:text-red-300 mt-1">Please enter a valid number.</div>
               </div>
             ) : (
               <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-md border border-dashed border-gray-300 dark:border-gray-600 text-xs text-gray-500 dark:text-gray-400 text-center">

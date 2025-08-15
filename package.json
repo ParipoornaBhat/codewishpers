@@ -7,7 +7,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "scripts": {
-     "socket": "npx nodemon server/socket-server.ts",
+    "socket": "npx nodemon server/socket-server.ts",
     "build": "next build --no-lint",
     "build:ci": "next build --no-lint",
     "check": "next lint && tsc --noEmit",

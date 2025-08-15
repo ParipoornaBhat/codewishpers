@@ -82,8 +82,13 @@ model Question {
   startTime   DateTime
   endTime     DateTime
   createdAt   DateTime     @default(now())
+  
+  winner      Int           @default(0) 
+  runnerUp      Int           @default(0) 
+  secondRunnerUp      Int           @default(0) 
+  participant      Int           @default(0) 
 
-  testCases    TestCase[]
+  testCases   TestCase[]
   submissions  Submission[]
   leaderboard  LeaderboardEntry[]
 
@@ -103,6 +108,7 @@ model Team {
   id           String        @id @default(cuid())
   name         String        @unique
   createdAt    DateTime      @default(now())
+  points      Int           @default(0)
 
   submissions  Submission[]
   leaderboard  LeaderboardEntry[]
