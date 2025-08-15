@@ -1,7 +1,10 @@
 import { z } from "zod"
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc"
 import { TRPCError } from "@trpc/server"
+import { QuestionMeta } from "@/lib/QuestionMeta";
+
 import { nanoid } from "nanoid"
+import { start } from "repl";
 export const questionRouter = createTRPCRouter({
  questionselect: protectedProcedure
   .input(
@@ -11,7 +14,6 @@ export const questionRouter = createTRPCRouter({
   )
   .mutation(async ({ ctx, input }) => {
     const { code } = input;
-
     // 1. Get the question with visible test cases and team access
     const question = await ctx.db.question.findUnique({
       where: { code },
@@ -28,10 +30,7 @@ export const questionRouter = createTRPCRouter({
     });
 
     if (!question) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Question not found",
-      });
+     return {success: false, message: "Question not found"}
     }
 
     const sessionUserId = ctx.session.user.id;
@@ -143,6 +142,10 @@ export const questionRouter = createTRPCRouter({
       difficulty: z.string().min(1),
       startTime: z.date().optional(),
       endTime: z.date().optional(),
+      winner: z.number().min(0).default(0),           // new
+      runnerUp: z.number().min(0).default(0),         // new
+      secondRunnerUp: z.number().min(0).default(0),   // new
+      participant: z.number().min(0).default(0),      // new
       testCases: z
         .array(
           z.object({
@@ -161,6 +164,10 @@ export const questionRouter = createTRPCRouter({
       difficulty,
       startTime,
       endTime,
+      winner,
+      runnerUp,
+      secondRunnerUp,
+      participant,
       testCases,
     } = input
 
@@ -170,6 +177,10 @@ export const questionRouter = createTRPCRouter({
       description,
       difficulty,
       code: "TEMP",
+      winner,
+      runnerUp, 
+      secondRunnerUp,
+      participant,
     }
 
     if (startTime) data.startTime = startTime
@@ -201,53 +212,7 @@ export const questionRouter = createTRPCRouter({
     return { ...updatedQuestion }
   }),
 
-
-
-  delete: publicProcedure
-  .input(z.object({ id: z.string() }))
-  .mutation(async ({ ctx, input }) => {
-    // Step 1: Disconnect all teams from this question
-    await ctx.db.question.update({
-      where: { id: input.id },
-      data: {
-        teams: {
-          set: [], // Remove all connections in the many-to-many join table
-        },
-      },
-    });
-
-    // Step 2: Clean up dependent models
-    await ctx.db.testCase.deleteMany({ where: { questionId: input.id } });
-    await ctx.db.submission.deleteMany({ where: { questionId: input.id } });
-    await ctx.db.leaderboardEntry.deleteMany({ where: { questionId: input.id } });
-
-    // Step 3: Delete the question itself
-    await ctx.db.question.delete({
-      where: { id: input.id },
-    });
-
-    return { success: true };
-  }),
-
-
-   getById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const question = await ctx.db.question.findUnique({
-        where: { id: input.id },
-        include: {
-          testCases: true,
-          submissions: true,
-          leaderboard: true,
-          teams: true,
-        },
-      });
-
-      if (!question) throw new Error("Question not found");
-      return question;
-    }),
-
-  // UPDATE
+    // UPDATE
 update: publicProcedure
   .input(
     z.object({
@@ -258,7 +223,11 @@ update: publicProcedure
       startTime: z.date().nullable().optional(),
       endTime: z.date().nullable().optional(),
       code: z.string().optional(),
-      number: z.number().optional(), // we'll discard this
+      winner: z.number().min(0).optional(),
+      runnerUp: z.number().min(0).optional(),
+      secondRunnerUp: z.number().min(0).optional(),
+      participant: z.number().min(0).optional(),
+      number: z.number().optional(),
       testCases: z
         .array(
           z.object({
@@ -320,6 +289,17 @@ update: publicProcedure
       )
     );
 
+    // Fetch old points before update
+    const oldQuestion = await ctx.db.question.findUnique({
+      where: { id },
+      select: {
+        winner: true,
+        runnerUp: true,
+        secondRunnerUp: true,
+        participant: true,
+      },
+    });
+
     const updatedQuestion = await ctx.db.question.update({
       where: { id },
       data: questionData,
@@ -328,8 +308,207 @@ update: publicProcedure
       },
     });
 
+    // --- If points config changed, update leaderboard entries ---
+    const pointsChanged =
+      (rest.winner !== undefined && rest.winner !== oldQuestion?.winner) ||
+      (rest.runnerUp !== undefined && rest.runnerUp !== oldQuestion?.runnerUp) ||
+      (rest.secondRunnerUp !== undefined &&
+        rest.secondRunnerUp !== oldQuestion?.secondRunnerUp) ||
+      (rest.participant !== undefined &&
+        rest.participant !== oldQuestion?.participant);
+
+    if (pointsChanged) {
+  const leaderboardEntries = await ctx.db.leaderboardEntry.findMany({
+    where: { questionId: id },
+    include: {
+      submission: {
+        select: { passedTestCases: true },
+      },
+    },
+    orderBy: { rank: "asc" },
+  });
+
+  await Promise.all(
+    leaderboardEntries.map((entry) => {
+      const hasPassedAny = entry.submission?.passedTestCases > 0;
+
+      let points = 0; // default no points if failed all
+      if (hasPassedAny) {
+        if (entry.rank === 1) points = updatedQuestion.winner;
+        else if (entry.rank === 2) points = updatedQuestion.runnerUp;
+        else if (entry.rank === 3) points = updatedQuestion.secondRunnerUp;
+        else points = updatedQuestion.participant;
+      }
+
+      return ctx.db.leaderboardEntry.update({
+        where: { id: entry.id },
+        data: { points },
+      });
+    })
+  );
+}
+
+
     return updatedQuestion;
   }),
+
+  delete: publicProcedure
+  .input(z.object({ id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    const { id } = input;
+
+    // Step 0: Check if question exists
+    const question = await ctx.db.question.findUnique({
+      where: { id },
+      select: { id: true, teams: true },
+    });
+    if (!question) {
+      return { success: false, error: "Question not found" };
+    }
+
+    // Step 1: Disconnect all teams (only if any exist)
+    if (question.teams.length > 0) {
+      await ctx.db.question.update({
+        where: { id },
+        data: { teams: { set: [] } },
+      });
+    }
+
+    // Step 2: Clean up dependent models
+    const [testCaseCount, submissionCount, leaderboardCount] = await Promise.all([
+      ctx.db.testCase.count({ where: { questionId: id } }),
+      ctx.db.submission.count({ where: { questionId: id } }),
+      ctx.db.leaderboardEntry.count({ where: { questionId: id } }),
+    ]);
+
+    if (testCaseCount > 0) {
+      await ctx.db.testCase.deleteMany({ where: { questionId: id } });
+    }
+    if (submissionCount > 0) {
+      await ctx.db.submission.deleteMany({ where: { questionId: id } });
+    }
+    if (leaderboardCount > 0) {
+      await ctx.db.leaderboardEntry.deleteMany({ where: { questionId: id } });
+    }
+
+    // Step 3: Delete the question itself
+    await ctx.db.question.delete({ where: { id } });
+
+    return { success: true };
+  }),
+
+
+  reset: publicProcedure
+  .input(z.object({ id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    // Step 1: Disconnect all teams from this question
+    await ctx.db.question.update({
+      where: { id: input.id },
+      data: {
+        teams: {
+          set: [], // Remove all connections in the many-to-many join table
+        },
+      },
+    });
+
+    // Step 2: Clean up dependent models
+    await ctx.db.leaderboardEntry.deleteMany({ where: { questionId: input.id } });
+    await ctx.db.submission.deleteMany({ where: { questionId: input.id } });
+
+    return { success: true };
+  }),
+
+   getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const question = await ctx.db.question.findUnique({
+        where: { id: input.id },
+        include: {
+          testCases: true,
+          submissions: true,
+          leaderboard: true,
+          teams: true,
+        },
+      });
+
+      if (!question) throw new Error("Question not found");
+      return question;
+    }),
+resetDB: publicProcedure.mutation(async ({ ctx }) => {
+  await ctx.db.$transaction(async (tx) => {
+    // Step 1: Find questions with code Q001 → Q005
+    const questionsToDelete = await tx.question.findMany({
+      where: { code: { in: ["Q001", "Q002", "Q003", "Q004", "Q005"] } },
+      select: { id: true },
+    });
+
+    // Step 2: Delete related records first (to avoid FK issues)
+    for (const { id } of questionsToDelete) {
+      await tx.question.update({
+        where: { id },
+        data: { teams: { set: [] } },
+      });
+      await tx.testCase.deleteMany({ where: { questionId: id } });
+      await tx.leaderboardEntry.deleteMany({ where: { questionId: id } }); // delete leaderboard entries first
+      await tx.submission.deleteMany({ where: { questionId: id } });     // then delete submissions
+      await tx.question.delete({ where: { id } });
+    }
+
+    // Step 3: Hard reset the sequence for `number` to 1
+    await tx.$executeRawUnsafe(`
+      ALTER SEQUENCE "Question_number_seq" RESTART WITH 1;
+    `);
+
+    // Step 4: Re-insert questions from QuestionMeta
+    for (const q of QuestionMeta) {
+      const now = new Date();
+      const startTime = q.startTime
+        ? new Date(q.startTime)
+        : new Date(now.getTime() + 10 * 60 * 1000);
+
+      const endTime = q.endTime
+        ? new Date(q.endTime)
+        : new Date(startTime.getTime() + 90 * 60 * 1000);
+
+      const question = await tx.question.create({
+        data: {
+          title: q.title,
+          description: q.description,
+          difficulty: q.difficulty,
+          startTime,
+          endTime,
+          code: "TEMP", // will set actual code after insert
+          winner: q.winner,
+          runnerUp: q.runnerUp,
+          secondRunnerUp: q.secondRunnerUp,
+          participant: q.participant,
+        },
+      });
+
+      // Update with proper Q001/Q002... code
+      const paddedNumber = String(question.number).padStart(3, "0");
+      await tx.question.update({
+        where: { id: question.id },
+        data: { code: `Q${paddedNumber}` },
+      });
+
+      // Create test cases
+      await tx.testCase.createMany({
+        data: q.testCases.map((tc) => ({
+          input: tc.input,
+          expected: tc.expected,
+          isVisible: tc.isVisible,
+          questionId: question.id,
+        })),
+      });
+    }
+  });
+
+  return { success: true };
+}),
+
+
+    
 
 
 })

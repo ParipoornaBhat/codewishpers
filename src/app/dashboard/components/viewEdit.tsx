@@ -181,6 +181,51 @@ onChange={(e) => updateField("endTime", new Date(e.target.value))}
     disabled={!editable}
   />
 </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Winner Points</Label>
+                  <Input
+                    type="number"
+                    value={localData.winner ?? 0}
+                    onChange={(e) => updateField("winner", Number(e.target.value))}
+                    disabled={!editable}
+                    min={0}
+                  />
+                </div>
+                <div>
+                  <Label>Runner-Up Points</Label>
+                  <Input
+                    type="number"
+                    value={localData.runnerUp ?? 0}
+                    onChange={(e) => updateField("runnerUp", Number(e.target.value))}
+                    disabled={!editable}
+                    min={0}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <Label>Second Runner-Up Points</Label>
+                  <Input
+                    type="number"
+                    value={localData.secondRunnerUp ?? 0}
+                    onChange={(e) => updateField("secondRunnerUp", Number(e.target.value))}
+                    disabled={!editable}
+                    min={0}
+                  />
+                </div>
+                <div>
+                  <Label>Participant Points</Label>
+                  <Input
+                    type="number"
+                    value={localData.participant ?? 0}
+                    onChange={(e) => updateField("participant", Number(e.target.value))}
+                    disabled={!editable}
+                    min={0}
+                  />
+                </div>
+              </div>
 
             </div>
           </CardContent>

@@ -4,6 +4,7 @@ import type React from "react"
 import { FUNCTION_META } from "@/lib/functionMeta" // Importing the function metadata
 import { useCallback, useState, useEffect, useRef } from "react"
 import {api} from "@/trpc/react"
+import { toast } from "sonner"
 import ReactFlow, {
   type Node,
   type Edge,
@@ -126,54 +127,54 @@ useEffect(() => {
 
 
   // Execute the function chain whenever nodes or edges change
- useEffect(() => {
-  const inputNode = nodes.find((n) => n.type === "input")
-  const inputVal = inputNode && !isNaN(Number(inputNode.data?.value)) ? Number(inputNode.data.value) : null
+//  useEffect(() => {
+//   const inputNode = nodes.find((n) => n.type === "input")
+//   const inputVal = inputNode && !isNaN(Number(inputNode.data?.value)) ? Number(inputNode.data.value) : null
 
-  // Detect if input value changed
-  const inputChanged = prevInputValRef.current !== inputVal
+//   // Detect if input value changed
+//   const inputChanged = prevInputValRef.current !== inputVal
 
-  // Track current input edges for each function node
-  const currentFuncInputEdges = new Map<string, string[]>()
+//   // Track current input edges for each function node
+//   const currentFuncInputEdges = new Map<string, string[]>()
 
-  nodes.forEach((node) => {
-    if (node.type === "function") {
-      const inputSources = edges
-        .filter((e) => e.target === node.id)
-        .map((e) => e.source)
-        .sort()
+//   nodes.forEach((node) => {
+//     if (node.type === "function") {
+//       const inputSources = edges
+//         .filter((e) => e.target === node.id)
+//         .map((e) => e.source)
+//         .sort()
 
-      currentFuncInputEdges.set(node.id, inputSources)
-    }
-  })
+//       currentFuncInputEdges.set(node.id, inputSources)
+//     }
+//   })
 
-  // Detect if new input edge is added to any function node
-  let inputEdgeChanged = false
+//   // Detect if new input edge is added to any function node
+//   let inputEdgeChanged = false
 
-  for (const [nodeId, currentInputs] of currentFuncInputEdges.entries()) {
-    const prevInputs = prevFuncInputEdgesRef.current.get(nodeId) || []
-    if (prevInputs.join(",") !== currentInputs.join(",")) {
-      inputEdgeChanged = true
-      break
-    }
-  }
+//   for (const [nodeId, currentInputs] of currentFuncInputEdges.entries()) {
+//     const prevInputs = prevFuncInputEdgesRef.current.get(nodeId) || []
+//     if (prevInputs.join(",") !== currentInputs.join(",")) {
+//       inputEdgeChanged = true
+//       break
+//     }
+//   }
 
-  if (inputChanged || inputEdgeChanged) {
-    const timeout = setTimeout(() => {
-      executeChain()
-      onUpdate(worksheetId, nodes, edges)
+//   if (inputChanged || inputEdgeChanged) {
+//     const timeout = setTimeout(() => {
+//       executeChain()
+//       onUpdate(worksheetId, nodes, edges)
      
-  saveToLocalStorage(worksheetId, nodes, edges)
+//   saveToLocalStorage(worksheetId, nodes, edges)
 
-  //New: Save to localStorage
-      // Update references
-      prevInputValRef.current = inputVal
-      prevFuncInputEdgesRef.current = currentFuncInputEdges
-    }, 300)
+//   //New: Save to localStorage
+//       // Update references
+//       prevInputValRef.current = inputVal
+//       prevFuncInputEdgesRef.current = currentFuncInputEdges
+//     }, 300)
 
-    return () => clearTimeout(timeout)
-  }
-}, [nodes, edges])
+//     return () => clearTimeout(timeout)
+//   }
+// }, [nodes, edges])
 
 const refreshChain = () => {
   const inputNode = nodes.find((n) => n.type === "input")
@@ -224,11 +225,48 @@ const refreshChain = () => {
 }
 
 
+// useEffect(() => {
+//   const cleanup = refreshChain()
+//   return cleanup
+// }, [nodes, edges])
 useEffect(() => {
-  const cleanup = refreshChain()
-  return cleanup
-}, [nodes, edges])
+  const inputNode = nodes.find((n) => n.type === "input")
+  const inputVal = inputNode?.data.value ?? ""
 
+  // detect input‐value or edge changes
+  const inputChanged = prevInputValRef.current !== inputVal
+  const currentFuncInputEdges = new Map<string,string[]>()
+  nodes.forEach((node) => {
+    if (node.type === "function") {
+      const sources = edges
+        .filter((e) => e.target === node.id)
+        .map((e) => e.source)
+        .sort()
+      currentFuncInputEdges.set(node.id, sources)
+    }
+  })
+  let inputEdgeChanged = false
+  for (const [id, cur] of currentFuncInputEdges) {
+    const prev = prevFuncInputEdgesRef.current.get(id) || []
+    if (prev.join(",") !== cur.join(",")) {
+      inputEdgeChanged = true
+      break
+    }
+  }
+
+  if (inputChanged || inputEdgeChanged) {
+    const timeout = setTimeout(() => {
+      executeChain()
+      onUpdate(worksheetId, nodes, edges)
+      saveToLocalStorage(worksheetId, nodes, edges)
+
+      prevInputValRef.current = inputVal
+      prevFuncInputEdgesRef.current = currentFuncInputEdges
+    }, 300)
+
+    return () => clearTimeout(timeout)
+  }
+}, [nodes, edges])
 
 
 
@@ -237,12 +275,9 @@ const executeChain = async () => {
   const nextNodes: Node[] = nodes.map((n) => ({ ...n }))
 
   const inputNode = nextNodes.find((n) => n.type === "input")
-  const startVal =
-    inputNode && !isNaN(Number(inputNode.data.value))
-      ? Number(inputNode.data.value)
-      : null
+  const startVal = inputNode ? inputNode.data.value : null
 
-  if (!inputNode || startVal === null) return
+  if (!inputNode || startVal === null || startVal === "") return
 
   const valueMap = new Map<string, any>([[inputNode.id, startVal]])
   const visited = new Set<string>()
@@ -271,7 +306,6 @@ const executeChain = async () => {
 
         const mutation = fnMutations?.[target.data.operation]
         if (!mutation) {
-          console.warn(`❌ No mutation found for "${target.data.operation}"`)
           updateNode(target.id, {
             result: null,
             loading: false,
@@ -284,22 +318,38 @@ const executeChain = async () => {
 
         try {
           const res = await mutation.mutateAsync(inputValues)
-          valueMap.set(target.id, res)
+          if (!res.success) {
+            throw new Error(res.error || "Unknown mutation error")
+          }
+          valueMap.set(target.id, res.result)
           updateNode(target.id, {
-            result: res,
+            result: res.result,
             input: inputValues,
             loading: false,
             error: null,
           })
 
           queue.push(target.id)
+
         } catch (err: any) {
-          console.error(`❌ Error in node ${target.id}`, err)
+          console.log(`❌ Error in node ${target.id}`, err)
+
+          const errorMessage = err?.message || "Unknown error"
+          toast.error(`Node Error (${target.data.operation}): ${errorMessage}`)
+
+          // Remove all incoming edges to this node
+          const updatedEdges = edges.filter(e => e.target !== target.id)
+
+          setEdges(updatedEdges)
+          saveToLocalStorage(worksheetId, nodes, updatedEdges)
+          useWorksheetStore.getState().setWorksheet(worksheetId, nodes, updatedEdges)
+
           updateNode(target.id, {
             result: null,
             loading: false,
-            error: err?.message ?? "Unknown error",
+            error: errorMessage,
           })
+          continue
         }
       }
 
@@ -313,6 +363,7 @@ const executeChain = async () => {
     }
   }
 }
+
 
 // Utility function to update a single node's data
 const updateNode = (id: string, data: Record<string, any>) => {

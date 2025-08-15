@@ -1,6 +1,9 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
+const SOCKET_URL="https://codewishpers.onrender.com"
+
+
 export const env = createEnv({
   /**
    * Specify your server-side environment variables schema here. This way you can ensure the app
@@ -15,7 +18,7 @@ export const env = createEnv({
 
     // AUTH_DISCORD_ID: z.string(),
     // AUTH_DISCORD_SECRET: z.string(),
-
+    SOCKET_URL: z.string().url().default(SOCKET_URL),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -27,6 +30,8 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
+      NEXT_PUBLIC_SOCKET_URL: z.string().url().default(SOCKET_URL),
+  
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
   },
 
@@ -38,7 +43,9 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     // AUTH_DISCORD_ID: process.env.AUTH_DISCORD_ID,
     // AUTH_DISCORD_SECRET: process.env.AUTH_DISCORD_SECRET,
+    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL || SOCKET_URL,
     NODE_ENV: process.env.NODE_ENV,
+    SOCKET_URL: process.env.SOCKET_URL || SOCKET_URL,
   },
 
   /**

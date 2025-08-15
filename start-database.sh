@@ -11,6 +11,15 @@
 
 # On Linux and macOS you can run this script directly - `./start-database.sh`
 
+# npx prisma db push --force-reset
+# npx prisma generate
+# npm run db:push
+# npx prisma db seed 
+# npm run dev
+# npm run socket
+
+
+
 # import env variables from .env
 set -a
 source .env

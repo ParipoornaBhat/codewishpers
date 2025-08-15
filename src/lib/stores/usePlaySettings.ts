@@ -12,6 +12,8 @@ type PlaySettingsStore = {
   setQuestionCardOpen: (value: boolean) => void;
   showSubmissions?: boolean;
   toggleSubmissions?: (value: boolean) => void;
+  leaderBoardFullScreen?: boolean;
+  setLeaderBoardFullScreen?: (value: boolean) => void;
 };
 
 export const usePlaySettings = create<PlaySettingsStore>((set) => ({
@@ -25,5 +27,6 @@ export const usePlaySettings = create<PlaySettingsStore>((set) => ({
   setQuestionCardOpen: (value) => set({ QuestionCardOpen: value }),
   showSubmissions: false,
   toggleSubmissions: () => set((state) => ({ showSubmissions: !state.showSubmissions })),
-
+  leaderBoardFullScreen: false,
+  setLeaderBoardFullScreen: (value) => set({ leaderBoardFullScreen: value }),
 }));
