@@ -1,6 +1,7 @@
 // src/lib/hooks/useSocket.ts
 "use client";
 
+import { env } from "@/env";
 import { useEffect, useRef, useState } from "react";
 import { io as ClientIO, Socket } from "socket.io-client";
 
@@ -14,8 +15,7 @@ export const useSocket = () => {
     // Prevent duplicate socket connections
     if (!socketRef.current) {
       try {
-        const frontendURL = window.location.origin;
-        const socketURL = frontendURL.replace("3000", "3003");
+        const socketURL = env.SOCKET_URL;
 
         const socket = ClientIO(socketURL, {
           path: "/socket.io",
