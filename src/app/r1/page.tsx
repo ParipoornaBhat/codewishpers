@@ -189,6 +189,7 @@ export default function R1TesterPage() {
                 setSelectedFunction("");
                 setTestInputs([]);
                 setLastTestOutput(null);
+                setTestHistory([]);
               }}
             >
               Reset
