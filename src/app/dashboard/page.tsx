@@ -247,10 +247,20 @@ const { mutate: reset5Question, isPending: isResetting5 } = api.question.resetDB
       }}
     />
   </div>
-        <Button onClick={() => reset5Question()}>
-    <RotateCcw className="h-4 w-4 mr-2" />
-    Reset 5 Questions
-        </Button>
+     <Button
+  onClick={() => {
+    const confirmed = window.confirm(
+      "⚠️ Are you sure you want to reset the 5 questions? This action cannot be undone."
+    );
+    if (confirmed) {
+      reset5Question();
+    }
+  }}
+>
+  <RotateCcw className="h-4 w-4 mr-2" />
+  Reset 5 Questions
+</Button>
+
   {/* Sort Dropdown */}
   <div className="w-full md:w-auto">
     <Select
