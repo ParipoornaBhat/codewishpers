@@ -2,7 +2,7 @@ import { ActivityIcon as Function } from "lucide-react";
 
 // ----------------- Types -----------------
 
-export const supportedTypes = ["number", "string", "char", "boolean", "array", "object" ,"float"] as const;
+export const supportedTypes = ["number", "string", "char", "boolean", "array", "object" ,"float", "any"] as const;
 export type SupportedType = (typeof supportedTypes)[number];
 export type Category = "Math" | "Logic";
 
@@ -86,16 +86,16 @@ export const CATEGORIES: ("All" | Category)[] = ["All", "Math", "Logic"];
 export const R1_FUNCTION_META: FunctionMeta[] = [
 
    // include solution function meta here too
-  { id: "R1Q1", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
-  { id: "R1Q2", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
-  { id: "R1Q3", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
-  { id: "R1Q4", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
-  { id: "R1Q5", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
-  { id: "R1Q6", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
-  { id: "R1Q7", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
-  { id: "R1Q8", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
-  { id: "R1Q9", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
-  { id: "R1Q10", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
+  { id: "R1Q1", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "string" },//done
+  { id: "R1Q2", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },//done
+  { id: "R1Q3", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["any"], outputType: "string" },//done
+  { id: "R1Q4", category: "Math", icon: Function, description: "Final solution function", numInputs: 2, inputTypes: ["array","string"], outputType: "string" },//DONE
+  { id: "R1Q5", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["array"], outputType: "number" },//DONE
+  // { id: "R1Q6", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
+  // { id: "R1Q7", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
+  // { id: "R1Q8", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
+  // { id: "R1Q9", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
+  // { id: "R1Q10", category: "Math", icon: Function, description: "Final solution function", numInputs: 1, inputTypes: ["number"], outputType: "number" },
 ];
 
 

@@ -1,19 +1,18 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
-import { FUNCTION_META, type FunctionMeta } from "@/lib/functionMeta";
+import { R1_FUNCTION_META, type FunctionMeta } from "@/lib/functionMeta";
 
 // ----------- ZOD SCHEMA TYPES (Optional, can be used in frontend too) -----------
 
-export const supportedTypes = ["number", "string", "char", "boolean", "array", "object", "float"] as const;
+export const supportedTypes = ["number", "string", "char", "boolean", "array", "object", "float", "any"] as const;
 export type SupportedType = typeof supportedTypes[number];
 
 // ----------- INPUT PARSER -----------
-
+// --- parseInput (unchanged behavior for typed inputs) ---
 function parseInput(value: string, type: SupportedType): any {
   try {
     switch (type) {
       case "number": {
-        // Strict number (int or float)
         const num = Number(value);
         if (!/^-?\d+(\.\d+)?$/.test(value.trim()) || isNaN(num)) {
           throw new Error(`"${value}" is not a valid number.`);
@@ -22,7 +21,6 @@ function parseInput(value: string, type: SupportedType): any {
       }
 
       case "float": {
-        // Accept integers or decimals, always return with 4 precision
         const num = Number(value);
         if (isNaN(num)) {
           throw new Error(`"${value}" is not a valid float number.`);
@@ -82,14 +80,22 @@ function parseInput(value: string, type: SupportedType): any {
   }
 }
 
-function formatOutput(value: any, type: SupportedType): string {
+// --- formatOutput (adds 'any' handling) ---
+function formatOutput(value: any, type: SupportedType | "any"): string {
   try {
+    if (type === "any") {
+      // If it's an object/array return JSON, otherwise return raw string
+      if (value === null || value === undefined) return String(value);
+      if (typeof value === "object") return JSON.stringify(value);
+      return String(value);
+    }
+
     switch (type) {
       case "number":
-        return Number(value).toFixed(4); // Keep consistency
+        return Number(value).toString();
 
       case "float":
-        return parseFloat(Number(value).toFixed(4)).toString();
+        return parseFloat(value).toFixed(4);
 
       case "string":
       case "boolean":
@@ -112,14 +118,12 @@ function formatOutput(value: any, type: SupportedType): string {
   }
 }
 
-
-// ----------- DYNAMIC PROCEDURE BUILDER -----------
-
+// --- buildDynamicProcedure (special-case 'any' inputs) ---
 function buildDynamicProcedure(
   funcId: string,
   logicFn: (...args: any[]) => any
 ) {
-  const meta = FUNCTION_META.find((f) => f.id === funcId) as FunctionMeta;
+  const meta = R1_FUNCTION_META.find((f) => f.id === funcId) as FunctionMeta;
   if (!meta) throw new Error(`Function metadata not found for ${funcId}`);
 
   return publicProcedure
@@ -133,21 +137,40 @@ function buildDynamicProcedure(
           };
         }
 
-        const parsedInputs = meta.inputTypes.map((type, i) =>
-          parseInput(input[i] ?? "", type as SupportedType)
-        );
+        // Parse inputs but SKIP parseInput for type === "any"
+        const parsedInputs = meta.inputTypes.map((type, i) => {
+          const raw = input[i] ?? "";
+
+          if (type === "any") {
+            // Edge-case: don't enforce a strict type. Try to JSON.parse, else return raw string.
+            try {
+              return JSON.parse(raw);
+            } catch {
+              // keep as string if not valid JSON
+              return raw;
+            }
+          }
+
+          // For all typed inputs use the existing parseInput validator/transformer
+          return parseInput(raw, type as SupportedType);
+        });
 
         const result = logicFn(...parsedInputs);
 
+        // If the function returns an error-shaped object, pass it through
+        if (result && typeof result === "object" && "success" in result && result.success === false) {
+          return result;
+        }
+
+        // Use meta.outputType if present; if it's missing or 'any', format appropriately
+        const outType = (meta.outputType as SupportedType | "any") ?? "any";
         return {
           success: true,
-          result: formatOutput(result, meta.outputType as SupportedType),
+          result: formatOutput(result, outType),
         };
       } catch (err: any) {
-        // Log internally (optional)
         console.error(`[${funcId}] Function Error:`, err);
 
-        // Return safe error structure
         return {
           success: false,
           error: err.message || "An unexpected error occurred.",
@@ -157,80 +180,229 @@ function buildDynamicProcedure(
 }
 
 
+
 // ----------- ROUTER EXPORT -----------
 
 export const functionR1Router = createTRPCRouter({
 
-  R1Q1: buildDynamicProcedure("Q001S", (arr: number[]) => {
-    if (!Array.isArray(arr) || arr.length < 1 || typeof arr[0] !== "number" || !Number.isInteger(arr[0])) {
-      return {
-        success: false,
-        error: `Expected an array like [10] or [2, 1], received ${JSON.stringify(arr)}`,
-      };
-    }
-    const firstInt = arr[0];
-    if (firstInt <= 0) {
-      return {
-        success: false,
-        error: `Log base 2 is undefined for non-positive numbers. Received ${firstInt}`,
-      };
-    }
-    const result = Math.pow(5, Math.log(firstInt) / Math.log(2));
-    return Number.isInteger(result) ? result : parseFloat(result.toFixed(4));
-  }),
-  R1Q2: buildDynamicProcedure("Q002S", (x: number) => {
-    if (typeof x !== "number" || x < 0) {
-      return {
-        success: false,
-        error: `Expected a positive number, received ${x}`,
-      };
-    }
+ R1Q1: buildDynamicProcedure("R1Q1", (n: number) => {
 
-    // Step 1: Bisect digits
-    const str = String(Math.floor(x));
-    const mid = Math.floor(str.length / 2);
-    const first = parseInt(str.slice(0, mid), 10);
-    const second = parseInt(str.slice(mid), 10);
-
-    // Step 2: Sum of digits for each half
-    const sumDigits = (num: number) =>
-      String(Math.abs(num))
-        .split("")
-        .reduce((sum, d) => sum + Number(d), 0);
-    const sums = [sumDigits(first), sumDigits(second)];
-
-    // Step 3: Compare sums
-    return sums[0] === sums[1];
-  }),
-  R1Q3: buildDynamicProcedure("Q003S", (prefixSum: number[]) => {
-    if (!Array.isArray(prefixSum) || !prefixSum.every(n => typeof n === "number")) {
-      return {
-        success: false,
-        error: `Expected an array of numbers, received ${JSON.stringify(prefixSum)}`,
-      };
-    }
-
-    const arr1: number[] = [...prefixSum];                 // Fn7
-    const arr2: number[] = [0, ...prefixSum.slice(0, -1)]; // Fn8
-
-    // Safe non-null assertion
-    const original: number[] = arr1.map((val, i) => val - arr2[i]!); // Fn9
-
-    return original;
-  }),
-  R1Q4: buildDynamicProcedure("Q004S", (arr: number[]) => {
-  if (!Array.isArray(arr) || !arr.every(n => typeof n === "number" && Number.isInteger(n))) {
+   // Validate input
+  if (!Number.isInteger(n) || n <= 0) {
     return {
       success: false,
-      error: `Expected an array of integers, received ${JSON.stringify(arr)}`,
+      error: `Expected a positive integer, received ${n}`,
     };
   }
 
-  // XOR of all elements
-  return arr.reduce((acc, val) => acc ^ val, 0);
+  let result: number[] = [n];
+  while (n !== 1) {
+    if (n % 2 === 0) {
+      n = n / 2;
+    } else {
+      n = 3 * n + 1;
+    }
+    result.push(n);
+  }
+
+  // Join with arrows
+  return result.join("->");
 }),
-  R1Q5: buildDynamicProcedure("Q005S", (x:number) => {
-  return x*50;
+
+ R1Q2: buildDynamicProcedure("R1Q2", (n: number) => {
+  // Validate input
+  if (!Number.isInteger(n) || n < 0) {
+    return {
+      success: false,
+      error: `Expected a non-negative integer, received ${n}`,
+    };
+  }
+
+  let maxCount = 0;
+  let currentCount = 0;
+
+  while (n > 0) {
+    if (n & 1) {
+      currentCount++;
+      maxCount = Math.max(maxCount, currentCount);
+    } else {
+      currentCount = 0;
+    }
+    n >>= 1;
+  }
+
+  return maxCount; // number output
 }),
+
+R1Q3: buildDynamicProcedure("R1Q3", (arr: any[]) => {
+  if (!Array.isArray(arr) || arr.length !== 2) {
+    return {
+      success: false,
+      error: `Expected [string, number], received ${JSON.stringify(arr)}`,
+    };
+  }
+
+  const [str, k] = arr;
+
+  if (typeof str !== "string" || !Number.isInteger(k) || k < 0) {
+    return {
+      success: false,
+      error: `Invalid input. Expected [string, non-negative integer], received [${typeof str}, ${k}]`,
+    };
+  }
+
+  let ans = "";
+  const stars = new Set<number>();
+
+  // Find all star positions & mark replacement start index
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === "*") {
+      stars.add(Math.max(0, i - k));
+    }
+  }
+
+  let i = 0;
+  const n = str.length;
+  while (i < n) {
+    if (stars.has(i)) {
+      ans += "#".repeat(2 * k + 1);
+      i += 2 * k + 1;
+    } else {
+      ans += str[i];
+      i++;
+    }
+  }
+
+  return ans; // ✅ Output is string
+}),
+
+R1Q4: buildDynamicProcedure("R1Q4", (matrixInput: string[], dirPattern: string) => {
+  // ---- Input validation ----
+  if (!dirPattern || typeof dirPattern !== "string") {
+    return {
+      success: false,
+      error: `Invalid direction pattern (It should be a string): ${dirPattern}`,
+    };
+  }
+
+  const matrix: string[] = matrixInput;
+  const rows = matrix.length;
+
+  if (rows === 0) {
+    return { success: false, error: "Matrix is empty." };
+  }
+
+  const cols = matrix[0]!.length; // safe: rows > 0
+
+  // ---- Find initial position of 'i' ----
+  let startRow = -1, startCol = -1;
+
+  for (let r = 0; r < rows; r++) {
+    const row = matrix[r]!;
+    for (let c = 0; c < row.length; c++) {
+      if (row[c] === "i") {
+        startRow = r;
+        startCol = c;
+        break;
+      }
+    }
+    if (startRow !== -1) break;
+  }
+
+  if (startRow === -1) {
+    return { success: false, error: "No starting position 'i' found in matrix." };
+  }
+
+  let r = startRow, c = startCol;
+
+  // ---- Movement simulation ----
+  const moves: Record<string, [number, number]> = {
+    ">": [0, 1],
+    "<": [0, -1],
+    "^": [-1, 0],
+    "v": [1, 0],
+  };
+
+  for (const move of dirPattern) {
+    const [dr, dc] = moves[move] ?? [0, 0];
+    const nr = r + dr, nc = c + dc;
+
+    if (
+      nr >= 0 && nr < rows &&
+      nc >= 0 && nc < cols &&
+      matrix[nr]![nc] !== "#"
+    ) {
+      r = nr;
+      c = nc;
+    }
+  }
+
+  // ---- Build final maze ----
+  const result: string[] = [];
+
+  for (let i = 0; i < rows; i++) {
+    const row = matrix[i]!;
+    let newRow = "";
+    for (let j = 0; j < row.length; j++) {
+      if (i === r && j === c) {
+        newRow += "i";
+      } else if (i === startRow && j === startCol) {
+        newRow += ".";
+      } else {
+        newRow += row[j]!;
+      }
+    }
+    result.push(newRow);
+  }
+
+  return result.join("\n"); // return final maze as single string
+}),
+
+R1Q5: buildDynamicProcedure("R1Q5", (nums: number[]) => {
+  console.log("Input nums:", nums);
+
+  if (
+    !Array.isArray(nums) ||
+    nums.length !== 3 ||
+    typeof nums[0] !== "number" ||
+    typeof nums[1] !== "number" ||
+    typeof nums[2] !== "number"
+  ) {
+    console.log("❌ Failed validation check");
+    return {
+      success: false,
+      error: "Expected an array of three numbers.",
+    };
+  }
+
+  try {
+    // int(chr(nums[0]))
+    const a = Number(String.fromCharCode(nums[0]));
+
+    // int(chr(nums[1]))
+    const b = Number(String.fromCharCode(nums[1]));
+
+    // int(ord(str(nums[2])))
+    const c = nums[2].toString().charCodeAt(0);
+
+    console.log("Parsed values:", { a, b, c });
+
+    const result = a * b + c;
+
+    console.log("Computed result:", result);
+
+    return result;
+  } catch (err) {
+    console.error("❌ Error in calculation:", err);
+    return {
+      success: false,
+      error: "Calculation error.",
+    };
+  }
+}),
+
+
+
+
   
 });

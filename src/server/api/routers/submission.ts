@@ -209,7 +209,7 @@ export const submissionRouter = createTRPCRouter({
     const res = await fetch(`${process.env.SOCKET_URL}/emit-leaderboard-update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ questionId: question.code }),
+      body: JSON.stringify({ questionId: "overall" }),
     });
 
     if (!res.ok) {

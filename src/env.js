@@ -1,7 +1,7 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-const SOCKET_URL="https://codewishpers.onrender.com"
+const SOCKET_URL="http://localhost:3003"
 
 
 export const env = createEnv({
@@ -30,7 +30,7 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-      NEXT_PUBLIC_SOCKET_URL: z.string().url().default(SOCKET_URL),
+      NEXT_PUBLIC_SOCKET_URL: z.string().url(),
   
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
   },

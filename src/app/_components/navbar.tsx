@@ -105,7 +105,9 @@ const [open, setOpen] = useState(false);
           <Link href="/" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
             Home
           </Link>
-      
+          <Link href="/r1" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
+            Round_1
+          </Link>
             
              {session && role === "TEAM" && (
             <Link href="/play" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">

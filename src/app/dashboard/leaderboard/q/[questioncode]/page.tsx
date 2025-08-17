@@ -45,19 +45,18 @@ const LeaderBoard = () => {
   const { leaderBoardFullScreen, setLeaderBoardFullScreen } = usePlaySettings();
   const params = useParams();
   const questionCode = params?.questioncode as string;
-
   const { data, isLoading, refetch } = api.leaderboard.getLeaderboard.useQuery(
     { questionCode },
     { enabled: !!questionCode }
   );
 
   const { socket, connected } = useSocket();
-
+  const Room = `overall`;
   useEffect(() => {
-    if (!questionCode || !connected || !socket) return;
+    if (!Room || !connected || !socket) return;
 
-    socket.emit("joinRoom", questionCode);
-    console.log("📡 Joined room:", questionCode);
+    socket.emit("joinRoom", Room);
+    console.log("📡 Joined room:", Room);
     setLiveStatus("live");
     const onUpdate = (payload: { questionId: string }) => {
       console.log("🔄 Leaderboard update received:", payload);
@@ -67,12 +66,12 @@ const LeaderBoard = () => {
     socket.on("leaderboard-update", onUpdate);
 
     return () => {
-      socket.emit("leaveRoom", questionCode);
+      socket.emit("leaveRoom", Room);
       setLiveStatus("not-live");
       socket.off("leaderboard-update", onUpdate);
-      console.log("🚪 Left room:", questionCode);
+      console.log("🚪 Left room:", Room);
     };
-  }, [questionCode, connected, socket, refetch]);
+  }, [Room, connected, socket, refetch]);
 
   const toggleFullscreen = () => {
     if (setLeaderBoardFullScreen) {

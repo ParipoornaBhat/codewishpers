@@ -346,6 +346,29 @@ update: publicProcedure
       });
     })
   );
+  
+
+  console.log(`📣 Emitting leaderboard update for question Points Updation: ${updatedQuestion.code}`);
+  try {
+    const res = await fetch(`${process.env.SOCKET_URL}/emit-leaderboard-update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionId: `overall` }),
+    });
+
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "No response body");
+      console.log(
+        `❌ Failed to emit leaderboard update: ${res.status} ${res.statusText} - ${errorText}`
+      );
+    } else {
+      console.log("✅ Leaderboard update emitted successfully");
+    }
+  } catch (error: any) {
+    console.warn("🚨 Failed to connect to socket server:", error.message || error);
+  }
+
 }
 
 
@@ -414,6 +437,28 @@ update: publicProcedure
     // Step 2: Clean up dependent models
     await ctx.db.leaderboardEntry.deleteMany({ where: { questionId: input.id } });
     await ctx.db.submission.deleteMany({ where: { questionId: input.id } });
+
+
+    console.log(`🔄Socket emits Reset `);
+  try {
+    const res = await fetch(`${process.env.SOCKET_URL}/emit-leaderboard-update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionId: `overall` }),
+    });
+
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "No response body");
+      console.log(
+        `❌ Failed to emit leaderboard update: ${res.status} ${res.statusText} - ${errorText}`
+      );
+    } else {
+      console.log("✅ Leaderboard update emitted successfully");
+    }
+  } catch (error: any) {
+    console.warn("🚨 Failed to connect to socket server:", error.message || error);
+  }
 
     return { success: true };
   }),
@@ -503,6 +548,28 @@ resetDB: publicProcedure.mutation(async ({ ctx }) => {
       });
     }
   });
+
+   console.log(`🔄Socket emits Reset Overall DB `);
+  try {
+const res = await fetch(`${process.env.SOCKET_URL}/emit-leaderboard-update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionId: `overall` }),
+    });
+
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "No response body");
+      console.log(
+        `❌ Failed to emit leaderboard update: ${res.status} ${res.statusText} - ${errorText}`
+      );
+    } else {
+      console.log("✅ Leaderboard update emitted successfully");
+    }
+  } catch (error: any) {
+    console.warn("🚨 Failed to connect to socket server:", error.message || error);
+  }
+
 
   return { success: true };
 }),

@@ -586,76 +586,74 @@ const { mutate: reset5Question, isPending: isResetting5 } = api.question.resetDB
 
             <div className="flex justify-end">
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="bg-transparent">
-                    <MoreVertical className="h-4 w-4" />
-                    <span className="sr-only">Actions</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  
-                  {/* View/Edit */}
-                  <Dialog open={viewEdit} onOpenChange={SetViewEdit}>
-                    <DialogTrigger asChild>
-                      <DropdownMenuItem
-                        onClick={() => setViewEditQuestionId(question.id)}
-                      >
-                        <PencilIcon className="h-4 w-4 mr-2" />
-                        View/Edit
-                      </DropdownMenuItem>
-                    </DialogTrigger>
-                    <DialogContent
-                      aria-describedby={undefined}
-                      className="w-full h-full sm:max-w-[95vw] md:max-w-[80vw] max-h-[90vh] overflow-y-auto bg-gradient-to-b from-teal-50 to-purple-50 dark:from-teal-900 dark:to-purple-900 p-4 sm:rounded-xl"
-                    >
-                      <DialogHeader>
-                        <DialogTitle className="text-teal-700 dark:text-teal-300">
-                          Question
-                        </DialogTitle>
-                        <DialogDescription>Question Details</DialogDescription>
-                      </DialogHeader>
-                      {viewEditQuestionId && (
-                        <ViewEditQuestion
-                          questionId={viewEditQuestionId}
-                          close={() => setViewEditQuestionId(null)}
-                        />
-                      )}
-                    </DialogContent>
-                  </Dialog>
+  <DropdownMenuTrigger asChild>
+    <Button variant="outline" size="sm" className="bg-transparent">
+      <MoreVertical className="h-4 w-4" />
+      <span className="sr-only">Actions</span>
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent align="end" className="w-40">
+    {/* View/Edit */}
+    <DropdownMenuItem onClick={() => setViewEditQuestionId(question.id)}>
+      <PencilIcon className="h-4 w-4 mr-2" />
+      View/Edit
+    </DropdownMenuItem>
 
-                  {/* Leaderboard */}
-                  <DropdownMenuItem asChild>
-                    <Link href={`/dashboard/${question.code}/leaderboard`}>
-                      <Users className="h-4 w-4 mr-2" />
-                      Leaderboard
-                    </Link>
-                  </DropdownMenuItem>
+    {/* Leaderboard */}
+    <DropdownMenuItem asChild>
+      <Link href={`/dashboard/${question.code}/leaderboard`}>
+        <Users className="h-4 w-4 mr-2" />
+        Leaderboard
+      </Link>
+    </DropdownMenuItem>
 
-                  {/* Delete */}
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (confirm("Are you sure you want to delete this question?")) {
-                        deleteQuestion({ id: question.id });
-                      }
-                    }}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
+    {/* Delete */}
+    <DropdownMenuItem
+      onClick={() => {
+        if (confirm("Are you sure you want to delete this question?")) {
+          deleteQuestion({ id: question.id });
+        }
+      }}
+    >
+      <XCircle className="h-4 w-4 mr-2" />
+      Delete
+    </DropdownMenuItem>
 
-                  {/* Reset */}
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (confirm("Are you sure you want to reset this question?")) {
-                        resetQuestion({ id: question.id });
-                      }
-                    }}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+    {/* Reset */}
+    <DropdownMenuItem
+      onClick={() => {
+        if (confirm("Are you sure you want to reset this question?")) {
+          resetQuestion({ id: question.id });
+        }
+      }}
+    >
+      <RotateCcw className="h-4 w-4 mr-2" />
+      Reset
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+
+{/* Dialog outside Dropdown */}
+{viewEditQuestionId && (
+  <Dialog open={true} onOpenChange={() => setViewEditQuestionId(null)}>
+    <DialogContent
+      aria-describedby={undefined}
+      className="w-full h-full sm:max-w-[95vw] md:max-w-[80vw] max-h-[90vh] overflow-y-auto bg-gradient-to-b from-teal-50 to-purple-50 dark:from-teal-900 dark:to-purple-900 p-4 sm:rounded-xl"
+    >
+      <DialogHeader>
+        <DialogTitle className="text-teal-700 dark:text-teal-300">
+          Question
+        </DialogTitle>
+        <DialogDescription>Question Details</DialogDescription>
+      </DialogHeader>
+      <ViewEditQuestion
+        questionId={viewEditQuestionId}
+        close={() => setViewEditQuestionId(null)}
+      />
+    </DialogContent>
+  </Dialog>
+)}
+
             </div>
 
 
