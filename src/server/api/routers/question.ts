@@ -486,17 +486,17 @@ resetDB: publicProcedure.mutation(async ({ ctx }) => {
       where: { code: { in: ["Q001", "Q002", "Q003", "Q004", "Q005"] } },
       select: { id: true },
     });
+    const questionIds = questionsToDelete.map(q => q.id);
 
-    // Step 2: Delete related records first (to avoid FK issues)
-    for (const { id } of questionsToDelete) {
-      await tx.question.update({
-        where: { id },
-        data: { teams: { set: [] } },
-      });
-      await tx.testCase.deleteMany({ where: { questionId: id } });
-      await tx.leaderboardEntry.deleteMany({ where: { questionId: id } }); // delete leaderboard entries first
-      await tx.submission.deleteMany({ where: { questionId: id } });     // then delete submissions
-      await tx.question.delete({ where: { id } });
+    if (questionIds.length > 0) {
+      // Step 2: Delete related records in batches to avoid FK issues
+      await tx.leaderboardEntry.deleteMany({ where: { questionId: { in: questionIds } } });
+      await tx.submission.deleteMany({ where: { questionId: { in: questionIds } } });
+      await tx.testCase.deleteMany({ where: { questionId: { in: questionIds } } });
+      for (const qId of questionIds) {
+        await tx.question.update({ where: { id: qId }, data: { teams: { set: [] } } });
+      }
+      await tx.question.deleteMany({ where: { id: { in: questionIds } } });
     }
 
     // Step 3: Hard reset the sequence for `number` to 1
@@ -505,7 +505,7 @@ resetDB: publicProcedure.mutation(async ({ ctx }) => {
     `);
 
     // Step 4: Re-insert questions from QuestionMeta
-    for (const q of QuestionMeta) {
+    for (const [index, q] of QuestionMeta.entries()) {
       const now = new Date();
       const startTime = q.startTime
         ? new Date(q.startTime)
@@ -515,48 +515,42 @@ resetDB: publicProcedure.mutation(async ({ ctx }) => {
         ? new Date(q.endTime)
         : new Date(startTime.getTime() + 90 * 60 * 1000);
 
-      const question = await tx.question.create({
+      // Compute code directly during creation (avoid create → update)
+      const paddedNumber = String(index + 1).padStart(3, "0");
+      const code = `Q${paddedNumber}`;
+
+      await tx.question.create({
         data: {
           title: q.title,
           description: q.description,
           difficulty: q.difficulty,
           startTime,
           endTime,
-          code: "TEMP", // will set actual code after insert
+          code,
           winner: q.winner,
           runnerUp: q.runnerUp,
           secondRunnerUp: q.secondRunnerUp,
           participant: q.participant,
+          testCases: {
+            create: q.testCases.map(tc => ({
+              input: tc.input,
+              expected: tc.expected,
+              isVisible: tc.isVisible,
+            })),
+          },
         },
-      });
-
-      // Update with proper Q001/Q002... code
-      const paddedNumber = String(question.number).padStart(3, "0");
-      await tx.question.update({
-        where: { id: question.id },
-        data: { code: `Q${paddedNumber}` },
-      });
-
-      // Create test cases
-      await tx.testCase.createMany({
-        data: q.testCases.map((tc) => ({
-          input: tc.input,
-          expected: tc.expected,
-          isVisible: tc.isVisible,
-          questionId: question.id,
-        })),
       });
     }
   });
 
-   console.log(`🔄Socket emits Reset Overall DB `);
+  // Emit leaderboard update outside transaction
+  console.log(`🔄Socket emits Reset Overall DB`);
   try {
-const res = await fetch(`${process.env.SOCKET_URL}/emit-leaderboard-update`, {
+    const res = await fetch(`${process.env.SOCKET_URL}/emit-leaderboard-update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questionId: `overall` }),
     });
-
 
     if (!res.ok) {
       const errorText = await res.text().catch(() => "No response body");
@@ -570,9 +564,9 @@ const res = await fetch(`${process.env.SOCKET_URL}/emit-leaderboard-update`, {
     console.warn("🚨 Failed to connect to socket server:", error.message || error);
   }
 
-
   return { success: true };
 }),
+
 
 
     
