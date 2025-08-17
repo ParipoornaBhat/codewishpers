@@ -289,7 +289,9 @@ const [open, setOpen] = useState(false);
     <FaHome className="h-5 w-5" />
     Home
   </Link>
-
+            <Link href="/r1" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
+            Round_1
+          </Link>
   
 
 
@@ -300,10 +302,15 @@ const [open, setOpen] = useState(false);
               Round 2
             </Link>
           )}
-      {role === "ADMIN" && (
+    {role === "ADMIN" && (<>
       <Link href="/dashboard" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
         Dashboard
       </Link>
+           <Link href="/dashboard/leaderboard" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
+        Leaderboard
+      </Link>
+
+</>
     )}
     <button
       onClick={async () => {
