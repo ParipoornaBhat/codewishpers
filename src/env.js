@@ -1,7 +1,7 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
-const SOCKET_URL="https://codewishpers.onrender.com"
+const SOCKET_URL="http://localhost:3003"
 
 
 export const env = createEnv({
