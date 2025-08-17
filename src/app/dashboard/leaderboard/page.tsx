@@ -22,25 +22,28 @@ const OverallLeaderboard = () => {
   const [liveStatus, setLiveStatus] = useState<"live" | "not-live">("not-live");
 
   // 🔄 Socket live updates
+  const Room = `overall`;
   useEffect(() => {
-    if (!connected || !socket) return;
+    if (!Room || !connected || !socket) return;
 
-    socket.emit("joinRoom", "overall-leaderboard");
+    socket.emit("joinRoom", Room);
+    console.log("📡 Joined room:", Room);
     setLiveStatus("live");
-
-    const onUpdate = () => {
-      console.log("🔄 Overall leaderboard update received");
+    const onUpdate = (payload: { questionId: string }) => {
+      console.log("🔄 Leaderboard update received:", payload);
       refetch();
     };
 
     socket.on("leaderboard-update", onUpdate);
 
     return () => {
-      socket.emit("leaveRoom", "overall-leaderboard");
+      socket.emit("leaveRoom", Room);
       setLiveStatus("not-live");
       socket.off("leaderboard-update", onUpdate);
+      console.log("🚪 Left room:", Room);
     };
-  }, [connected, socket, refetch]);
+  }, [Room, connected, socket, refetch]);
+
 
   // ⛶ Toggle fullscreen
   const toggleFullscreen = () => {
@@ -131,7 +134,7 @@ const OverallLeaderboard = () => {
                     {team.questionStats.map((q) => (
                          <Link
                             key={q.questionId}
-                            href={`/leaderboard/${q.questionCode}`}
+                            href={`/dashboard/leaderboard/q/${q.questionCode}`}
                             target="_blank"
                             rel="noopener noreferrer"
                         >

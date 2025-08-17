@@ -30,7 +30,7 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-      NEXT_PUBLIC_SOCKET_URL: z.string().url().default(SOCKET_URL),
+      NEXT_PUBLIC_SOCKET_URL: z.string().url(),
   
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
   },

@@ -1,5 +1,5 @@
 const startTime = new Date("2025-08-12T18:15:00+05:30");
-const endTime = new Date("2025-08-17T04:00:00+05:30");
+const endTime = new Date("2025-08-19T04:00:00+05:30");
 
 export const QuestionMeta = [
   {
@@ -152,10 +152,10 @@ The scroll says:
     difficulty: "Medium",
     startTime,
     endTime,
-    winner: 0,
-    runnerUp: 0,
-    secondRunnerUp: 0,
-    participant: 0,
+    winner: 30,
+    runnerUp: 20,
+    secondRunnerUp: 10,
+    participant: 5,
     testCases: [
   { input: "0", expected: "0", isVisible: true },
   { input: "1", expected: "50", isVisible: true },

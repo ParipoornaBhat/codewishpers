@@ -15,7 +15,7 @@ export const useSocket = () => {
     // Prevent duplicate socket connections
     if (!socketRef.current) {
       try {
-        const socketURL = env.SOCKET_URL;
+        const socketURL = env.NEXT_PUBLIC_SOCKET_URL;
 
         const socket = ClientIO(socketURL, {
           path: "/socket.io",
