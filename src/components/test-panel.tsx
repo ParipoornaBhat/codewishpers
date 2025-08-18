@@ -165,7 +165,7 @@ export default function TestPanel({ worksheet, onClose }: TestPanelProps) {
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
+                  <PopoverContent className="w-full p-0 z-[9999]">
                     <Command>
                       <CommandInput placeholder="Search functions..." className="text-sm" />
                       <CommandList>
@@ -175,6 +175,7 @@ export default function TestPanel({ worksheet, onClose }: TestPanelProps) {
                             const match = func.id.match(/^fn(\d+)$/);
                             return match && Number(match[1]) >= 1 && Number(match[1]) <= 20;
                           }).map((func) => (
+                            
                             <CommandItem
                               key={func.id}
                               value={func.id}

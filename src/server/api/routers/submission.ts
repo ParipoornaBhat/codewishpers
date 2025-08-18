@@ -22,7 +22,8 @@ export const submissionRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const {
+      return await ctx.db.$transaction(async (db) => {
+              const {
         teamId,
         questionId,
         worksheet,
@@ -32,7 +33,7 @@ export const submissionRouter = createTRPCRouter({
         failedTestCase,
       } = input;
 
-      const existing = await ctx.db.submission.findMany({
+      const existing = await db.submission.findMany({
         where: { teamId, questionId },
         orderBy: { createdAt: "asc" },
       });
@@ -43,7 +44,7 @@ export const submissionRouter = createTRPCRouter({
 
       const createOrUpdate = async (target?: typeof existing[0]) => {
         if (target) {
-          return ctx.db.submission.update({
+          return db.submission.update({
             where: { id: target.id },
             data: {
               worksheet,
@@ -55,7 +56,7 @@ export const submissionRouter = createTRPCRouter({
             },
           });
         }
-        return ctx.db.submission.create({
+        return db.submission.create({
           data: {
             teamId,
             questionId,
@@ -109,7 +110,7 @@ export const submissionRouter = createTRPCRouter({
       }
 
       const code = `SUB-${saved.id.toString().padStart(4, "0")}`;
-      const updated = await ctx.db.submission.update({
+      const updated = await db.submission.update({
         where: { id: saved.id },
         data: { submissionCode: code },
       });
@@ -125,7 +126,7 @@ export const submissionRouter = createTRPCRouter({
 
       if (isBetter) {
   // First, upsert leaderboard entry (your existing code)
-  const lbEntry = await ctx.db.leaderboardEntry.upsert({
+  const lbEntry = await db.leaderboardEntry.upsert({
     where: {
       teamId_questionId: { teamId, questionId },
     },
@@ -141,7 +142,7 @@ export const submissionRouter = createTRPCRouter({
   });
 
   // Fetch question points config
-  const questionData = await ctx.db.question.findUnique({
+  const questionData = await db.question.findUnique({
     where: { id: questionId },
     select: {
       winner: true,
@@ -153,7 +154,7 @@ export const submissionRouter = createTRPCRouter({
   if (!questionData) throw new Error(`Question not found for ID: ${questionId}`);
 
   // Fetch all leaderboard entries for this question, including submission stats
-  const allEntries = await ctx.db.leaderboardEntry.findMany({
+  const allEntries = await db.leaderboardEntry.findMany({
     where: { questionId },
     include: {
       submission: true,
@@ -184,7 +185,7 @@ export const submissionRouter = createTRPCRouter({
         else points = questionData.participant;
       }
 
-      return ctx.db.leaderboardEntry.update({
+      return db.leaderboardEntry.update({
         where: { id: entry.id },
         data: {
           rank,
@@ -198,7 +199,7 @@ export const submissionRouter = createTRPCRouter({
   await Promise.all(updates);
 
   // Continue your socket emit code...
-  const question = await ctx.db.question.findUnique({
+  const question = await db.question.findUnique({
     where: { id: questionId },
     select: { code: true },
   });
@@ -228,6 +229,7 @@ export const submissionRouter = createTRPCRouter({
 }
 
       return updated;
+      });
     }),
 });
 

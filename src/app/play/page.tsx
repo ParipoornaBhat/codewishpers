@@ -214,17 +214,10 @@ const removeWorksheet = (id: string) => {
         </div>
         {/* Test Panel */}
         {showTestPanel && (
-        <div
-          className="fixed top-15 right-0 w-96 h-[calc(100vh-70px)]
-                    bg-white dark:bg-gray-800 border-l dark:border-gray-700
-                    shadow-sm z-[99999] pointer-events-auto"
-        >
-          <TestPanel
-            worksheet={currentWorksheet}
-            onClose={() => setShowTestPanel(false)}
-          />
-        </div>
-      )}
+  <div className="absolute right-0 top-[70px] z-[9998] w-96 h-[calc(100vh-70px)] bg-white dark:bg-gray-800 border-l dark:border-gray-700 shadow-lg">
+    <TestPanel worksheet={currentWorksheet} onClose={() => setShowTestPanel(false)} />
+  </div>
+)}
 
       </div>
     </div>
