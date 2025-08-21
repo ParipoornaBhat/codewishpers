@@ -91,7 +91,7 @@ const [open, setOpen] = useState(false);
     {isPlayPage && (
             <div className="hidden lg:flex flex-col justify-center items-start">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Code_Whispers Round 2
+                Code Whisperer Round 2
               </h1>
               <div className="text-sm text-muted-foreground">
                 Visual Function Chaining Challenge
