@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -20,6 +21,7 @@ import { FUNCTION_META } from "@/lib/functionMeta" // Importing the function met
 import { getSession } from "next-auth/react"
 import {SubmissionHistory} from "@/components/submissionhistory"
 import type { JsonValue } from "@prisma/client/runtime/library"
+import { QuestionCode } from "@/lib/QuestionMeta"
  type HandleTestProps = {
   fnMutations: Record<string, any>
   updateNode?: (id: string, data: any) => void
@@ -76,11 +78,12 @@ export default function QuestionCard() {
 // console.log("Current worksheet:", current)
 
 
+
+
   const { QuestionCardOpen: isOpen, setQuestionCardOpen: setIsOpen } = usePlaySettings()
   const [questionCode, setQuestionCode] = useState("")
   const [questionData, setQuestionData] = useState<QuestionData | null>(null)
-const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
-
+  const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
 
   const { mutate: selectQuestion, isPending: isQuestionPending } = api.question.questionselect.useMutation({
     onSuccess: (data) => {
@@ -118,6 +121,8 @@ const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
       isVisible: typeof tc.isVisible === "boolean" ? tc.isVisible : true // default to true if missing
     }))
   )}
+    localStorage.setItem("question-code", data.code!)
+
 },
     onError: (err) => {
       handleReset();
@@ -165,6 +170,7 @@ const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
       isVisible: typeof tc.isVisible === "boolean" ? tc.isVisible : true // default to true if missing
     }))
   )}
+  localStorage.setItem("question-code", data.code!)
       window.location.reload();
 
 },
@@ -486,7 +492,7 @@ const filteredSubmissions = useMemo(
               </Button>
             </div>
             <CardTitle className="text-center text-2xl font-bold">
-              Enter Question Code
+              {questionData ? `${questionData.code}`  : "Enter Question Code"}
             </CardTitle>
           </CardHeader>
 
@@ -501,17 +507,24 @@ const filteredSubmissions = useMemo(
                     }}
                   >
                     <Label htmlFor="questionCode" className="text-lg">Question Code</Label>
-                    <Input
-                      id="questionCode"
+                    <Select
                       value={questionCode}
-                      onChange={(e) => {
-                        const value = e.target.value.toUpperCase();
+                      onValueChange={(value) => {
                         setQuestionCode(value);
                         localStorage.setItem("question-code", value);
                       }}
-                      placeholder="Q001"
-                      className="text-md"
-                    />
+                    >
+                      <SelectTrigger className="text-md">
+                        <SelectValue placeholder="Select Code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {QuestionCode.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {code}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
                     <Button
                       type="submit" // important for Enter key to trigger

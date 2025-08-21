@@ -22,9 +22,8 @@ export default function InputNode({ data }: InputNodeProps) {
   const [expectedOutput, setExpectedOutput] = useState<string | number | null>(null)
   const [value, setValue] = useState(data.value || "")
 
-  const questionCode = useMemo(() => localStorage.getItem("question-code") || "", [])
+  const questionCode = useMemo(() => localStorage.getItem("question-code"), [])
   const matchedFn = SOLUTION_FUNCTIONS.find((fn) => fn.questionCode === questionCode)
-
   const dynamicMutation = matchedFn
     ? api.f[matchedFn.id as keyof typeof api.f].useMutation()
     : null
@@ -112,7 +111,6 @@ useEffect(() => {
                 <div className="text-lg font-mono text-blue-800 dark:text-blue-100 mt-1">
                   {value}
                 </div>
-
                 {/* Show expected output or error */}
                 {expectedOutput !== null && (
                   expectedOutput.toString().startsWith("Error") ? (
