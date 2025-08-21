@@ -44,7 +44,7 @@ export default function TestPanel({ worksheet, onClose }: TestPanelProps) {
   const [open, setOpen] = useState(false)
 
   const fnMutations = Object.fromEntries(
-    FUNCTION_META.map((meta) => [meta.id, (api.f as any)[meta.id]?.useMutation?.()])
+    FUNCTION_META.map((meta) => [meta.fc, (api.f as any)[meta.id]?.useMutation?.()])
   )
 
   useEffect(() => {
@@ -126,7 +126,7 @@ export default function TestPanel({ worksheet, onClose }: TestPanelProps) {
     }
   }
 
-  const meta = FUNCTION_META.find((f) => f.id === selectedFunction)
+  const meta = FUNCTION_META.find((f) => f.fc === selectedFunction)
 
   return (
     <div className="h-full flex flex-col">
@@ -171,26 +171,29 @@ export default function TestPanel({ worksheet, onClose }: TestPanelProps) {
                       <CommandList>
                         <CommandEmpty>No function found.</CommandEmpty>
                         <CommandGroup className="max-h-40 overflow-y-auto">
-                         {FUNCTION_META.filter(func => {
-                            const match = func.id.match(/^fn(\d+)$/);
-                            return match && Number(match[1]) >= 1 && Number(match[1]) <= 20;
-                          }).map((func) => (
-                            
-                            <CommandItem
-                              key={func.id}
-                              value={func.id}
-                              onSelect={() => {
-                                setSelectedFunction(func.id)
+                        {FUNCTION_META
+                          .filter(func => typeof func.id === "string" && func.id.startsWith("fn"))
+                          .sort((a, b) => {
+                            const numA = parseInt(a.fc.replace("fn", ""), 10);
+                            const numB = parseInt(b.fc.replace("fn", ""), 10);
+                            return numA - numB;
+                          })
+                          .map(func => (
+                              <CommandItem
+                                key={func.fc}
+                                value={func.fc}
+                                onSelect={() => {
+                                setSelectedFunction(func.fc)
                                 setOpen(false)
                                 setTestInputs(Array(func.numInputs).fill(""))
                               }}
                               className="flex justify-between"
                             >
                               <span>
-                                {func.id}{" "}
+                                {func.fc}{" "}
                                 <span className="text-muted-foreground">({func.category})</span>
                               </span>
-                              {selectedFunction === func.id && (
+                              {selectedFunction === func.fc && (
                                 <Check className="ml-auto h-4 w-4 opacity-70" />
                               )}
                             </CommandItem>

@@ -14,21 +14,24 @@ export default function FunctionLibrary() {
   const { isLibFunctionsOpen: isOpen, setIsLibFunctionsOpen: setIsOpen } = usePlaySettings()
   const [searchTerm, setSearchTerm] = useState("")
 
-  const getDisplayName = (id: string) => {
-    const num = parseInt(id.replace(/\D/g, ""))
+  const getDisplayName = (fc: string) => {
+    const num = parseInt(fc.replace(/\D/g, ""))
     return `Function #${num}`
   }
 
- const filteredFunctions = FUNCTION_META
-  // First filter only fn1 to fn20
-  .filter(func => {
-    const match = func.id.match(/^fn(\d+)$/);
-    return match && Number(match[1]) >= 1 && Number(match[1]) <= 20;
-  })
-  // Then apply the search term filter
+const filteredFunctions = FUNCTION_META
   .filter(func =>
+    typeof func.id === "string" &&
+    func.id.startsWith("fn") &&
     getDisplayName(func.id).toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
+  .sort((a, b) => {
+    const numA = parseInt(a.fc.replace("fn", ""), 10);
+    const numB = parseInt(b.fc.replace("fn", ""), 10);
+    return numA - numB;
+  });
+
+
 
   const onDragStart = (event: React.DragEvent, func: any) => {
     event.dataTransfer.setData("application/reactflow", "function")
@@ -79,11 +82,11 @@ export default function FunctionLibrary() {
               <div className="space-y-2 pr-2">
               {filteredFunctions.map((func) => {
                 const IconComponent = func.icon
-                const displayName = getDisplayName(func.id)
+                const displayName = getDisplayName(func.fc)
 
                 return (
                   <Card
-                    key={func.id}
+                    key={func.fc}
                     className="cursor-grab active:cursor-grabbing hover:shadow-md transition-all duration-200 hover:scale-[1.02] dark:bg-gray-700 dark:border-gray-600"
                     draggable
                     onDragStart={(event) => onDragStart(event, func)}
