@@ -4,10 +4,30 @@ const endTime = new Date("2025-08-23T04:00:00+05:30");
 // const startTime = new Date("2025-08-23T10:45:00+05:30");
 // const endTime = new Date("2025-08-23T11:45:00+05:30");
 
-export const QuestionCode =["Q001", "Q002", "Q003", "Q004", "Q005","Q006","Q007","Q008","Q009"];
+const Easy = {
+  winner: 20,
+  runnerUp: 15,
+  secondRunnerUp: 10,
+  participant: 5
+};
+const Medium = {
+  winner: 40,
+  runnerUp: 25,
+  secondRunnerUp: 15,
+  participant: 5
+};
+const Hard = {
+  winner: 60,
+  runnerUp: 40,
+  secondRunnerUp: 20,
+  participant: 10
+};
+
+// Apply to each QuestionMeta entry:
+const QuestionCode =["Q001", "Q002", "Q003", "Q004", "Q005","Q006","Q007","Q008","Q009"];
 
 
-export const QuestionMeta = [
+const QuestionMeta = [
   {
     title: "Question",//O5 (x*50)
     description: `In the Merchant's Maze, three ancient coins lie hidden.
@@ -238,7 +258,7 @@ Goal: Recover the original numbers
 
 CAGE: [2^(log5 X)]
 `,
-    difficulty: "Easy",
+    difficulty: "Hard",
     startTime,
     endTime,
     winner: 0,
@@ -267,7 +287,6 @@ testCases: [
  {
   title: "Question", // Q9 // BINARY ADDITION 
   description: `Two numbers step into the Chamber of Bits and merge their voices into a single chorus of ones and zeros. If the chorus leans the other way, a sorrowful '-' sighs before it. Speak the final chorus.`,
-
   difficulty: "Easy",
   startTime,
   endTime,
@@ -293,3 +312,10 @@ testCases: [
 },
 ];
 
+QuestionMeta.forEach(q => {
+  if (q.difficulty === "Easy") Object.assign(q, Easy);
+  else if (q.difficulty === "Medium") Object.assign(q, Medium);
+  else if (q.difficulty === "Hard") Object.assign(q, Hard);
+});
+
+export { QuestionMeta ,QuestionCode };
