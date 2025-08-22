@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef  } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input"
@@ -129,6 +129,33 @@ export default function QuestionCard() {
       toast.error(`Failed to load question: ${err.message}`)
     },
   })
+  // --- Mount + hydrate once, and load question ---
+useEffect(() => {
+  // run once on client mount
+  const saved = localStorage.getItem("question-code")
+  if (saved) {
+    const code = saved.toUpperCase()
+    setQuestionCode(code)
+    // load the question (selectQuestion is your mutation)
+    selectQuestion({ code })
+  }
+}, []) // keep this to auto-load on page refresh / revisit
+
+// --- Guarded sync to localStorage for subsequent changes ---
+const hasHydratedRef = useRef(false)
+useEffect(() => {
+  // mark hydrated after first render (so we don't treat initial mount specially)
+  if (!hasHydratedRef.current) {
+    hasHydratedRef.current = true
+    return
+  }
+
+  if (!questionCode || !questionCode.trim()) return // don't write empty
+  const normalized = questionCode.toUpperCase()
+  if (localStorage.getItem("question-code") !== normalized) {
+    localStorage.setItem("question-code", normalized)
+  }
+}, [questionCode])
     const { mutate: selectQuestion2, isPending: isQuestionPending2 } = api.question.questionselect.useMutation({
     onSuccess: (data) => {
       if(data.success===false){
@@ -170,7 +197,6 @@ export default function QuestionCard() {
       isVisible: typeof tc.isVisible === "boolean" ? tc.isVisible : true // default to true if missing
     }))
   )}
-  localStorage.setItem("question-code", data.code!)
       window.location.reload();
 
 },
@@ -432,17 +458,6 @@ const handleSubmitCode = async () => {
     setClickedSubmit(true)
 
 }
-
-
-
-useEffect(() => {
-  const savedCode = localStorage.getItem("question-code")
-  if (savedCode) {
-     const code = savedCode.toUpperCase()
-    setQuestionCode(code)
-    selectQuestion({ code }) 
-  }
-}, [])
 
 
   const passedCount = testResults.filter((r) => r === true).length
