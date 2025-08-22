@@ -99,7 +99,7 @@ Your task is to reveal whether the given number holds this sacred balance.
     { input: "700007", expected: "true", isVisible: true },
   { input: "561056", expected: "false", isVisible: true },
     { input: "1212", expected: "true", isVisible: true },
-    { input: "345654", expected: "true", isVisible: true },
+    { input: "345654", expected: "false", isVisible: true },
 
   { input: "820028", expected: "true", isVisible: true },
   { input: "1001", expected: "true", isVisible: true },
