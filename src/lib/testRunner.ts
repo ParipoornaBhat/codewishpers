@@ -109,7 +109,7 @@ export const executeGraphAndCheckOutput = async ({
         const msg = `Missing function ${operation}`
         updateNode?.(currentId, { result: null, loading: false, error: msg })
         if (!erroredNodes.has(currentId)) {
-          toast.error(`Node Error (${operation}): ${msg}`)
+          toast.error(`Node Error : ${msg}`)
           erroredNodes.add(currentId)
         }
         return { passed: false, result: msg, intermediateSteps }
@@ -124,7 +124,7 @@ export const executeGraphAndCheckOutput = async ({
             const msg = res.error ?? "Execution failed"
             updateNode?.(currentId, { result: null, loading: false, error: msg })
             if (!erroredNodes.has(currentId)) {
-              toast.error(`Node Error (${operation}): ${msg}`)
+              toast.error(`Node Error : ${msg}`)
               erroredNodes.add(currentId)
             }
             return { passed: false, result: msg, intermediateSteps }
@@ -138,7 +138,7 @@ export const executeGraphAndCheckOutput = async ({
         const msg = err?.message ?? "Execution error"
         updateNode?.(currentId, { result: null, loading: false, error: msg })
         if (!erroredNodes.has(currentId)) {
-          toast.error(`Node Error (${operation}): ${msg}`)
+          toast.error(`Node Error : ${msg}`)
           erroredNodes.add(currentId)
         }
         return { passed: false, result: msg, intermediateSteps }

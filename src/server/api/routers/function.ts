@@ -188,7 +188,7 @@ export const functionRouter = createTRPCRouter({
   // fn5: buildDynamicProcedure("fn5", (x: number) => x / 2),
   // fn6: buildDynamicProcedure("fn6", (x: number) => Math.sqrt(x)),
 
-  //Q1
+  //Q1 fn 1,2,3
   fn1: buildDynamicProcedure("fn1", (arr: number[]) => {
     const meta = { numInputs: 1 }; // meta for error messages
 
@@ -236,7 +236,7 @@ export const functionRouter = createTRPCRouter({
   }),
 
   
-  //Q2
+  //Q2 fn 4,5,6
   // Fn4: Number -> 2 bisected digit arrays
   fn4: buildDynamicProcedure("fn4", (x: number) => {
   if (typeof x !== "number" || x < 0) {
@@ -288,7 +288,7 @@ export const functionRouter = createTRPCRouter({
     return arr[0] === arr[1];
   }),
 
-  //Q3 Fn7, Fn8, Fn9
+  //Q3 Fn 7,8,9
 // Fn7: List[int] → copy of the list
   fn7: buildDynamicProcedure("fn7", (arr: number[]) => {
     if (!Array.isArray(arr) || !arr.every(n => typeof n === "number")) {
@@ -347,13 +347,13 @@ export const functionRouter = createTRPCRouter({
   fn12: buildDynamicProcedure("fn12", (x: number) => x*2),
   fn13: buildDynamicProcedure("fn13", (x: number) => x*10),
 
-//Q6
+//Q6 fn 13,14,15 or 13,16,17
   fn14: buildDynamicProcedure("fn14", (x: number) => x - 5),
   fn15: buildDynamicProcedure("fn15", (x: number) => x + 3),
   fn16: buildDynamicProcedure("fn16", (x: number) => x - 4),
   fn17: buildDynamicProcedure("fn17", (x: number) => x + 2),
 
-  // Q7 + Q9
+  // Q7 fn 18,19,20 + Q9 fn 18,20 //  
   // fn18: Convert integers → **shared-width** two’s-complement strings
   fn18: buildDynamicProcedure("fn18", (arr: number[]) => {
     if (!Array.isArray(arr) || arr.length !== 2 || !arr.every(Number.isInteger)) {
@@ -387,30 +387,42 @@ export const functionRouter = createTRPCRouter({
 
     return [aP, twoComp];
   }),
-  // fn20: Interpret signed and add
-  fn20: buildDynamicProcedure("fn20", (arr: string[]) => {
-    if (!Array.isArray(arr) || arr.length !== 2 || !arr.every(s => /^[01]+$/.test(s))) {
-      return { success: false, error: `Expected binary array like ["010","101"], received ${JSON.stringify(arr)}` };
-    }
+    // fn20: Interpret signed and add
+ fn20: buildDynamicProcedure("fn20", (arr: unknown[]) => {
+  if (!Array.isArray(arr) || arr.length !== 2) {
+    return { success: false, error: `Expected binary array like ["010","101"], received ${JSON.stringify(arr)}` };
+  }
 
-    const [a, b] = arr;
-    const len = Math.max(a!.length, b!.length);
-    const aP = a!.padStart(len, a![0]);
-    const bP = b!.padStart(len, b![0]);
+  // Force string conversion
+  const strArr = arr.map(x => String(x));
 
-    const toSignedInt = (bin: string) => {
-      const w = bin.length;
-      const val = BigInt("0b" + bin);
-      const msbOne = bin[0] === "1";
-      return Number(msbOne ? val - (BigInt(1) << BigInt(w)) : val);
-    };
+  // Now validate
+  if (!strArr.every(s => /^[01]+$/.test(s))) {
+    return { success: false, error: `Expected binary strings like ["010","101"], received ${JSON.stringify(arr)}` };
+  }
 
-    const aDec = toSignedInt(aP);
-    const bDec = toSignedInt(bP);
-    return aDec + bDec;
-  }),
+  const [a, b] = strArr;
+  const len = Math.max(a!.length, b!.length);
 
-  // Q8
+  const aP = a!.padStart(len, a![0]); // pad with sign bit
+  const bP = b!.padStart(len, b![0]);
+
+  const toSignedInt = (bin: string) => {
+    const w = bin.length;
+    const val = BigInt("0b" + bin);
+    const msbOne = bin[0] === "1";
+    return Number(msbOne ? val - (BigInt(1) << BigInt(w)) : val);
+  };
+
+  const aDec = toSignedInt(aP);
+  const bDec = toSignedInt(bP);
+  return aDec + bDec;
+}),
+
+
+
+
+  // Q8 // fn 21,22,1
   // fn21: Number -> [digits], with sign preserved in the first digit
   fn21: buildDynamicProcedure("fn21", (n: number) => {
     if (typeof n !== "number" || !Number.isInteger(n)) {
@@ -429,7 +441,8 @@ export const functionRouter = createTRPCRouter({
     
     return str;
   }),
-  // adds elements irrespective of number signs and keeps the first number sign
+    // adds elements irrespective of number signs and keeps the first number sign
+
   fn22: buildDynamicProcedure("fn22", (arr: number[]) => {
   if (!Array.isArray(arr) || arr.length === 0 || !arr.every(n => Number.isInteger(n))) {
     throw new Error(`Expected an array of integers, received ${JSON.stringify(arr)}`);

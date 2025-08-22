@@ -171,28 +171,35 @@ export const submissionRouter = createTRPCRouter({
 
   // Assign ranks & points based on sorted order
     const updates = allEntries.map((entry, index) => {
-      const hasPassedAny = entry.submission.passedTestCases > 0;
+  const hasPassedAny = entry.submission.passedTestCases > 0;
+  const passedEnough = entry.submission.passedTestCases > 1; // ✅ new condition
 
-      let rank: number | null = null;
-      let points = 0;
+  let rank: number | null = null;
+  let points = 0;
 
-      if (hasPassedAny) {
-        rank = index + 1;
+  if (hasPassedAny) {
+    // If they passed enough, they are eligible for 1st/2nd/3rd
+    if (passedEnough) {
+      rank = index + 1;
 
-        if (rank === 1) points = questionData.winner;
-        else if (rank === 2) points = questionData.runnerUp;
-        else if (rank === 3) points = questionData.secondRunnerUp;
-        else points = questionData.participant;
-      }
-
-      return db.leaderboardEntry.update({
-        where: { id: entry.id },
-        data: {
-          rank,
-          points,
-        },
-      });
-    });
+      if (rank === 1) points = questionData.winner;
+      else if (rank === 2) points = questionData.runnerUp;
+      else if (rank === 3) points = questionData.secondRunnerUp;
+      else points = questionData.participant;
+    } else {
+      // Not eligible → push them down the ranking
+      rank = index + 4; // start from 4th place
+      points = questionData.participant;
+    }
+  }
+  return db.leaderboardEntry.update({
+    where: { id: entry.id },
+    data: {
+      rank,
+      points,
+    },
+  });
+});
 
 
   // Run updates in parallel
