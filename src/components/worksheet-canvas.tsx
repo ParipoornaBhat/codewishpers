@@ -335,7 +335,7 @@ const executeChain = async () => {
           console.log(`❌ Error in node ${target.id}`, err)
 
           const errorMessage = err?.message || "Unknown error"
-          toast.error(`Node Error (${target.data.operation}): ${errorMessage}`)
+          toast.error(`Node Error : ${errorMessage}`)
 
           // Remove all incoming edges to this node
           const updatedEdges = edges.filter(e => e.target !== target.id)

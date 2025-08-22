@@ -387,28 +387,40 @@ export const functionRouter = createTRPCRouter({
 
     return [aP, twoComp];
   }),
-  // fn20: Interpret signed and add
-  fn20: buildDynamicProcedure("fn20", (arr: string[]) => {
-    if (!Array.isArray(arr) || arr.length !== 2 || !arr.every(s => /^[01]+$/.test(s))) {
-      return { success: false, error: `Expected binary array like ["010","101"], received ${JSON.stringify(arr)}` };
-    }
+    // fn20: Interpret signed and add
+ fn20: buildDynamicProcedure("fn20", (arr: unknown[]) => {
+  if (!Array.isArray(arr) || arr.length !== 2) {
+    return { success: false, error: `Expected binary array like ["010","101"], received ${JSON.stringify(arr)}` };
+  }
 
-    const [a, b] = arr;
-    const len = Math.max(a!.length, b!.length);
-    const aP = a!.padStart(len, a![0]);
-    const bP = b!.padStart(len, b![0]);
+  // Force string conversion
+  const strArr = arr.map(x => String(x));
 
-    const toSignedInt = (bin: string) => {
-      const w = bin.length;
-      const val = BigInt("0b" + bin);
-      const msbOne = bin[0] === "1";
-      return Number(msbOne ? val - (BigInt(1) << BigInt(w)) : val);
-    };
+  // Now validate
+  if (!strArr.every(s => /^[01]+$/.test(s))) {
+    return { success: false, error: `Expected binary strings like ["010","101"], received ${JSON.stringify(arr)}` };
+  }
 
-    const aDec = toSignedInt(aP);
-    const bDec = toSignedInt(bP);
-    return aDec + bDec;
-  }),
+  const [a, b] = strArr;
+  const len = Math.max(a!.length, b!.length);
+
+  const aP = a!.padStart(len, a![0]); // pad with sign bit
+  const bP = b!.padStart(len, b![0]);
+
+  const toSignedInt = (bin: string) => {
+    const w = bin.length;
+    const val = BigInt("0b" + bin);
+    const msbOne = bin[0] === "1";
+    return Number(msbOne ? val - (BigInt(1) << BigInt(w)) : val);
+  };
+
+  const aDec = toSignedInt(aP);
+  const bDec = toSignedInt(bP);
+  return aDec + bDec;
+}),
+
+
+
 
   // Q8 // fn 21,22,1
   // fn21: Number -> [digits], with sign preserved in the first digit
