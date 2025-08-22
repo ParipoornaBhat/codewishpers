@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc"
 import { TRPCError } from "@trpc/server"
-import { QuestionMeta } from "@/lib/QuestionMeta";
+import { QuestionMeta,QuestionCode } from "@/lib/QuestionMeta";
 
 import { nanoid } from "nanoid"
 import { start } from "repl";
@@ -483,7 +483,7 @@ resetDB: publicProcedure.mutation(async ({ ctx }) => {
   await ctx.db.$transaction(async (tx) => {
     // Step 1: Find questions with code Q001 → Q005
     const questionsToDelete = await tx.question.findMany({
-      where: { code: { in: ["Q001", "Q002", "Q003", "Q004", "Q005"] } },
+      where: { code: { in: QuestionCode } },
       select: { id: true },
     });
     const questionIds = questionsToDelete.map(q => q.id);
@@ -506,6 +506,7 @@ resetDB: publicProcedure.mutation(async ({ ctx }) => {
 
     // Step 4: Re-insert questions from QuestionMeta
     for (const [index, q] of QuestionMeta.entries()) {
+      if (index >= QuestionCode.length) break;
       const now = new Date();
       const startTime = q.startTime
         ? new Date(q.startTime)
