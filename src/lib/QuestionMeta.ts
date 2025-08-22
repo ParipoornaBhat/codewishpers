@@ -285,7 +285,7 @@ testCases: [
 
   },
  {
-  title: "Question", // Q9 // BINARY ADDITION 
+  title: "DEMO Question", // Q9 // BINARY ADDITION DEMO
   description: `Two numbers step into the Chamber of Bits and merge their voices into a single chorus of ones and zeros. If the chorus leans the other way, a sorrowful '-' sighs before it. Speak the final chorus.`,
   difficulty: "Easy",
   startTime,
@@ -313,6 +313,7 @@ testCases: [
 ];
 
 QuestionMeta.forEach(q => {
+  if (q.title === "DEMO Question") return;
   if (q.difficulty === "Easy") Object.assign(q, Easy);
   else if (q.difficulty === "Medium") Object.assign(q, Medium);
   else if (q.difficulty === "Hard") Object.assign(q, Hard);
