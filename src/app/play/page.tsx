@@ -82,30 +82,39 @@ useEffect(() => {
 }, [])
 
 
-  const addWorksheet = () => {
-    const newId = (worksheets.length + 1).toString()
-    const newWorksheet = {
-      id: newId,
-      name: `Worksheet ${newId}`,
-      nodes: [
-        {
-          id: `input-${newId}`,
-          type: "input",
-          position: { x: 100, y: 200 },
-          data: { label: "Input", value: "" },
-        },
-        {
-          id: `output-${newId}`,
-          type: "output",
-          position: { x: 800, y: 200 },
-          data: { label: "Output", value: null },
-        },
-      ],
-      edges: [],
-    }
-    setWorksheets([...worksheets, newWorksheet])
-    setActiveWorksheet(newId)
-  }
+const addWorksheet = () => {
+  // Find the maximum ID among current worksheets
+  const maxId = worksheets.reduce((max, ws) => {
+    const num = parseInt(ws.id, 10);
+    return num > max ? num : max;
+  }, 0);
+
+  const newId = (maxId + 1).toString();
+
+  const newWorksheet = {
+    id: newId,
+    name: `Worksheet ${newId}`,
+    nodes: [
+      {
+        id: `input-${newId}`,
+        type: "input",
+        position: { x: 100, y: 200 },
+        data: { label: "Input", value: "" },
+      },
+      {
+        id: `output-${newId}`,
+        type: "output",
+        position: { x: 800, y: 200 },
+        data: { label: "Output", value: null },
+      },
+    ],
+    edges: [],
+  };
+
+  setWorksheets([...worksheets, newWorksheet]);
+  setActiveWorksheet(newId);
+};
+
 
   const updateWorksheet = useCallback((id: string, nodes: any[], edges: any[]) => {
     setWorksheets((prev) => prev.map((ws) => (ws.id === id ? { ...ws, nodes, edges } : ws)))
