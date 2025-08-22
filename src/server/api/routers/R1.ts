@@ -251,56 +251,49 @@ R1Q3: buildDynamicProcedure("R1Q3", (arr: any[]) => {
     };
   }
 
-  let ans = "";
-  const stars = new Set<number>();
-
-  // Find all star positions & mark replacement start index
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === "*") {
-      stars.add(Math.max(0, i - k));
-    }
-  }
-
-  let i = 0;
   const n = str.length;
-  while (i < n) {
-    if (stars.has(i)) {
-      ans += "#".repeat(2 * k + 1);
-      i += 2 * k + 1;
-    } else {
-      ans += str[i];
-      i++;
+  const chars = str.split("");
+
+  for (let i = 0; i < n; i++) {
+    if (str[i] === "*") {
+      const start = Math.max(0, i - k);
+      const end = Math.min(n - 1, i + k);
+      for (let j = start; j <= end; j++) {
+        chars[j] = "#";
+      }
     }
   }
 
-  return ans; // ✅ Output is string
+  return chars.join("");
 }),
 
-R1Q4: buildDynamicProcedure("R1Q4", (matrixInput: string[], dirPattern: string) => {
+R1Q4: buildDynamicProcedure("R1Q4", (matrixInput: any, dirPattern: any) => {
   // ---- Input validation ----
-  if (!dirPattern || typeof dirPattern !== "string") {
+  if (!Array.isArray(matrixInput) || !matrixInput.every(r => typeof r === "string")) {
     return {
       success: false,
-      error: `Invalid direction pattern (It should be a string): ${dirPattern}`,
+      error: `Invalid matrix input (expected string[]): ${JSON.stringify(matrixInput)}`,
+    };
+  }
+  if (typeof dirPattern !== "string") {
+    return {
+      success: false,
+      error: `Invalid direction pattern (expected string): ${dirPattern}`,
     };
   }
 
   const matrix: string[] = matrixInput;
   const rows = matrix.length;
-
   if (rows === 0) {
     return { success: false, error: "Matrix is empty." };
   }
-
-  const cols = matrix[0]!.length; // safe: rows > 0
+  const cols = matrix[0]!.length;
 
   // ---- Find initial position of 'i' ----
   let startRow = -1, startCol = -1;
-
   for (let r = 0; r < rows; r++) {
-    const row = matrix[r]!;
-    for (let c = 0; c < row.length; c++) {
-      if (row[c] === "i") {
+    for (let c = 0; c < matrix[r]!.length; c++) {
+      if (matrix[r]![c] === "i") {
         startRow = r;
         startCol = c;
         break;
@@ -308,14 +301,12 @@ R1Q4: buildDynamicProcedure("R1Q4", (matrixInput: string[], dirPattern: string) 
     }
     if (startRow !== -1) break;
   }
-
   if (startRow === -1) {
     return { success: false, error: "No starting position 'i' found in matrix." };
   }
 
-  let r = startRow, c = startCol;
-
   // ---- Movement simulation ----
+  let r = startRow, c = startCol;
   const moves: Record<string, [number, number]> = {
     ">": [0, 1],
     "<": [0, -1],
@@ -326,7 +317,6 @@ R1Q4: buildDynamicProcedure("R1Q4", (matrixInput: string[], dirPattern: string) 
   for (const move of dirPattern) {
     const [dr, dc] = moves[move] ?? [0, 0];
     const nr = r + dr, nc = c + dc;
-
     if (
       nr >= 0 && nr < rows &&
       nc >= 0 && nc < cols &&
@@ -339,67 +329,49 @@ R1Q4: buildDynamicProcedure("R1Q4", (matrixInput: string[], dirPattern: string) 
 
   // ---- Build final maze ----
   const result: string[] = [];
-
   for (let i = 0; i < rows; i++) {
-    const row = matrix[i]!;
     let newRow = "";
-    for (let j = 0; j < row.length; j++) {
+    for (let j = 0; j < matrix[i]!.length; j++) {
       if (i === r && j === c) {
         newRow += "i";
       } else if (i === startRow && j === startCol) {
         newRow += ".";
       } else {
-        newRow += row[j]!;
+        newRow += matrix[i]![j];
       }
     }
     result.push(newRow);
   }
 
-  return result.join("\n"); // return final maze as single string
+  return result.join("\n"); // ✅ single string with \n separator
 }),
 
-R1Q5: buildDynamicProcedure("R1Q5", (nums: number[]) => {
-  console.log("Input nums:", nums);
-
-  if (
-    !Array.isArray(nums) ||
-    nums.length !== 3 ||
-    typeof nums[0] !== "number" ||
-    typeof nums[1] !== "number" ||
-    typeof nums[2] !== "number"
-  ) {
-    console.log("❌ Failed validation check");
+R1Q5: buildDynamicProcedure("R1Q5", (n: number) => {
+  // ---- Input validation ----
+  if (typeof n !== "number" || !Number.isInteger(n) || n < 0) {
     return {
       success: false,
-      error: "Expected an array of three numbers.",
+      error: `Invalid input. Expected a non-negative integer, received: ${n}`,
     };
   }
 
   try {
-    // int(chr(nums[0]))
-    const a = Number(String.fromCharCode(nums[0]));
+    let a = 0, b = 1;
+    for (let i = 0; i < n; i++) {
+      const temp = a;
+      a = b;
+      b = temp + b;
+    }
 
-    // int(chr(nums[1]))
-    const b = Number(String.fromCharCode(nums[1]));
-
-    // int(ord(str(nums[2])))
-    const c = nums[2].toString().charCodeAt(0);
-
-    console.log("Parsed values:", { a, b, c });
-
-    const result = a * b + c;
-
-    console.log("Computed result:", result);
-
-    return result;
+    return a; // ✅ Fibonacci(n)
   } catch (err) {
-    console.error("❌ Error in calculation:", err);
     return {
       success: false,
       error: "Calculation error.",
     };
   }
 }),
+
 
 
 
