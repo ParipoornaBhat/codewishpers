@@ -570,13 +570,22 @@ const onDrop = useCallback(
         
   }
 
-  const clearAllNodes = () => {
-    setNodes((nds) => nds.filter((node) => node.type === "input" || node.type === "output"))
-    setEdges([])
-        
-    saveToLocalStorage(worksheetId, [], [])
-        
-  }
+const clearAllNodes = () => {
+  // read current nodes from state (if you have them as `nodes` in scope).
+  // if you only have setNodes updater, use the callback form to get latest.
+  setNodes((nds) => {
+    const filtered = nds.filter((node) => {
+      const type = (node.type ?? node.data?.type ?? "").toString().trim().toLowerCase();
+      return type === "input" || type === "output";
+    });
+
+    // also save the filtered nodes to localStorage (don't pass empty arrays)
+    saveToLocalStorage(worksheetId, filtered, []);
+    return filtered;
+  });
+  setEdges([]);
+}
+
 
   const toggleEraserMode = () => {
     setEraserMode(!eraserMode)

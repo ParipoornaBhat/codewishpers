@@ -8,6 +8,20 @@ export const supportedTypes = ["number", "string", "char", "boolean", "array", "
 export type SupportedType = typeof supportedTypes[number];
 
 // ----------- INPUT PARSER -----------
+// Helpers (put once near your pipeline)
+const bitWidthForSigned = (nums: number[]) => {
+  const maxAbs = Math.max(...nums.map(n => Math.abs(n)));
+  const magBits = maxAbs === 0 ? 1 : Math.floor(Math.log2(maxAbs)) + 1;
+  return magBits + 1; // magnitude bits + sign bit
+};
+
+const toTwosWidth = (n: number, w: number) => {
+  if (n >= 0) return n.toString(2).padStart(w, "0");
+  const W = BigInt(w);
+  const val = (BigInt(1) << W) + BigInt(n); // n is negative
+  // Keep exactly w bits
+  return val.toString(2).slice(-w).padStart(w, "1");
+};
 
 function parseInput(value: string, type: SupportedType): any {
   try {
@@ -333,14 +347,107 @@ export const functionRouter = createTRPCRouter({
   fn12: buildDynamicProcedure("fn12", (x: number) => x*2),
   fn13: buildDynamicProcedure("fn13", (x: number) => x*10),
 
+//Q6
+  fn14: buildDynamicProcedure("fn14", (x: number) => x - 5),
+  fn15: buildDynamicProcedure("fn15", (x: number) => x + 3),
+  fn16: buildDynamicProcedure("fn16", (x: number) => x - 4),
+  fn17: buildDynamicProcedure("fn17", (x: number) => x + 2),
 
-  fn14: buildDynamicProcedure("fn14", (x: number) => x - 1),
-  fn15: buildDynamicProcedure("fn15", (x: number) => x * 0.1),
-  fn16: buildDynamicProcedure("fn16", (x: number) => x ** 4),
-  fn17: buildDynamicProcedure("fn17", (x: number) => Math.log10(x)),
-  fn18: buildDynamicProcedure("fn18", (x: number) => Math.round(x)),
-  fn19: buildDynamicProcedure("fn19", (x: number) => Math.floor(x)),
-  fn20: buildDynamicProcedure("fn20", (x: number) => x < 0),
+  // Q7 + Q9
+  // fn18: Convert integers → **shared-width** two’s-complement strings
+  fn18: buildDynamicProcedure("fn18", (arr: number[]) => {
+    if (!Array.isArray(arr) || arr.length !== 2 || !arr.every(Number.isInteger)) {
+      return { success: false, error: `Expected an array of two integers, received ${JSON.stringify(arr)}` };
+    }
+    const w = bitWidthForSigned(arr);
+    return arr.map(n => toTwosWidth(n, w));
+  }),
+  // fn19: [a, two’s complement(b)] at **fixed width**, ignore overflow carry
+  fn19: buildDynamicProcedure("fn19", (arr: string[]) => {
+    if (!Array.isArray(arr) || arr.length !== 2 || !arr.every(s => /^[01]+$/.test(s))) {
+      return { success: false, error: `Expected an array of 2 binary strings, received ${JSON.stringify(arr)}` };
+    }
+
+    const [a, b] = arr;
+    const len = Math.max(a!.length, b!.length);
+    const aP = a!.padStart(len, a![0]); // already same width if from fn18
+    const bP = b!.padStart(len, b![0]);
+
+    // invert b
+    const inv = bP.split("").map(ch => (ch === "0" ? "1" : "0")).join("");
+
+    // add 1 (two's complement), **keep only len bits** (ignore extra carry)
+    let carry = 1, out = "";
+    for (let i = len - 1; i >= 0; i--) {
+      const sum = (inv[i] === "1" ? 1 : 0) + carry;
+      out = String(sum & 1) + out;
+      carry = sum >> 1;
+    }
+    const twoComp = out; // extra carry discarded by fixed width
+
+    return [aP, twoComp];
+  }),
+  // fn20: Interpret signed and add
+  fn20: buildDynamicProcedure("fn20", (arr: string[]) => {
+    if (!Array.isArray(arr) || arr.length !== 2 || !arr.every(s => /^[01]+$/.test(s))) {
+      return { success: false, error: `Expected binary array like ["010","101"], received ${JSON.stringify(arr)}` };
+    }
+
+    const [a, b] = arr;
+    const len = Math.max(a!.length, b!.length);
+    const aP = a!.padStart(len, a![0]);
+    const bP = b!.padStart(len, b![0]);
+
+    const toSignedInt = (bin: string) => {
+      const w = bin.length;
+      const val = BigInt("0b" + bin);
+      const msbOne = bin[0] === "1";
+      return Number(msbOne ? val - (BigInt(1) << BigInt(w)) : val);
+    };
+
+    const aDec = toSignedInt(aP);
+    const bDec = toSignedInt(bP);
+    return aDec + bDec;
+  }),
+
+  // Q8
+  // fn21: Number -> [digits], with sign preserved in the first digit
+  fn21: buildDynamicProcedure("fn21", (n: number) => {
+    if (typeof n !== "number" || !Number.isInteger(n)) {
+      return {
+        success: false,
+        error: `Expected an integer, received ${JSON.stringify(n)}`,
+      };
+    }
+
+    const str = String(Math.abs(n)).split("").map(d => parseInt(d, 10));
+
+    if (n < 0 && str.length > 0 && typeof str[0] === "number") {
+      // attach sign to first digit
+      str[0] = -str[0];
+    }
+    
+    return str;
+  }),
+  // adds elements irrespective of number signs and keeps the first number sign
+  fn22: buildDynamicProcedure("fn22", (arr: number[]) => {
+  if (!Array.isArray(arr) || arr.length === 0 || !arr.every(n => Number.isInteger(n))) {
+    throw new Error(`Expected an array of integers, received ${JSON.stringify(arr)}`);
+  }
+
+  // Take absolute sum
+  const absSum = arr.reduce((a, b) => a + Math.abs(b), 0);
+
+  // Preserve sign of first element
+  const result = arr[0] !== undefined && arr[0] < 0 ? -absSum : absSum;
+
+  return [result];
+}),
+
+
+
+
+
 
   // Solution functions
   // Q004S: buildDynamicProcedure("Q004S", (x: number) => x ** 2),
@@ -416,5 +523,63 @@ export const functionRouter = createTRPCRouter({
   Q005S: buildDynamicProcedure("Q005S", (x:number) => {
   return x*50;
 }),
-  
+  Q006S: buildDynamicProcedure("Q006S", (x:number) => {
+    return ((x*10)-2);
+  }),
+  Q007S: buildDynamicProcedure("Q007S", (arr: number[]) => {
+    if (
+      !Array.isArray(arr) ||
+      arr.length !== 2 ||
+      !arr.every((n) => typeof n === "number" && Number.isInteger(n))
+    ) {
+      throw new Error(`Expected an array of two integers, received ${JSON.stringify(arr)}`);
+    }
+
+    const [a, b] = arr;
+    return a! - b!; // plain integer result
+  }),
+  Q008S: buildDynamicProcedure("Q008S", (input: number ) => {
+    // Accept either number or string
+    if (
+      typeof input !== "number"
+    ) {
+      return {
+        success: false,
+        error: `Expected an integer, received ${JSON.stringify(input)}`,
+      };
+    }
+
+    const s = String(input).trim();
+
+    // Detect sign
+    const isNegative = s.startsWith("-");
+    const digits = isNegative ? s.slice(1) : s;
+
+    // Validate digits
+    if (!/^\d+$/.test(digits)) {
+      return {
+        success: false,
+        error: `Expected an integer or numeric string, received ${JSON.stringify(input)}`,
+      };
+    }
+
+    // Sum digits
+    let sum = 0;
+    for (let i = 0; i < digits.length; i++) sum += digits.charCodeAt(i) - 48;
+
+    const result = String(sum);
+    return isNegative ? "-" + result : result;
+  }),
+  Q009S: buildDynamicProcedure("Q007S", (arr: number[]) => {
+    if (
+      !Array.isArray(arr) ||
+      arr.length !== 2 ||
+      !arr.every((n) => typeof n === "number" && Number.isInteger(n))
+    ) {
+      throw new Error(`Expected an array of two integers, received ${JSON.stringify(arr)}`);
+    }
+
+    const [a, b] = arr;
+    return a! + b!; // plain integer result
+  }),
 });

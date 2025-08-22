@@ -130,7 +130,7 @@ CredentialsProvider({
       options: {
         httpOnly: true,
         sameSite: "lax",
-        secure: true,
+        secure: false,
         path: "/",
       },
     },

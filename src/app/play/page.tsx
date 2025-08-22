@@ -82,30 +82,39 @@ useEffect(() => {
 }, [])
 
 
-  const addWorksheet = () => {
-    const newId = (worksheets.length + 1).toString()
-    const newWorksheet = {
-      id: newId,
-      name: `Worksheet ${newId}`,
-      nodes: [
-        {
-          id: `input-${newId}`,
-          type: "input",
-          position: { x: 100, y: 200 },
-          data: { label: "Input", value: "" },
-        },
-        {
-          id: `output-${newId}`,
-          type: "output",
-          position: { x: 800, y: 200 },
-          data: { label: "Output", value: null },
-        },
-      ],
-      edges: [],
-    }
-    setWorksheets([...worksheets, newWorksheet])
-    setActiveWorksheet(newId)
-  }
+const addWorksheet = () => {
+  // Find the maximum ID among current worksheets
+  const maxId = worksheets.reduce((max, ws) => {
+    const num = parseInt(ws.id, 10);
+    return num > max ? num : max;
+  }, 0);
+
+  const newId = (maxId + 1).toString();
+
+  const newWorksheet = {
+    id: newId,
+    name: `Worksheet ${newId}`,
+    nodes: [
+      {
+        id: `input-${newId}`,
+        type: "input",
+        position: { x: 100, y: 200 },
+        data: { label: "Input", value: "" },
+      },
+      {
+        id: `output-${newId}`,
+        type: "output",
+        position: { x: 800, y: 200 },
+        data: { label: "Output", value: null },
+      },
+    ],
+    edges: [],
+  };
+
+  setWorksheets([...worksheets, newWorksheet]);
+  setActiveWorksheet(newId);
+};
+
 
   const updateWorksheet = useCallback((id: string, nodes: any[], edges: any[]) => {
     setWorksheets((prev) => prev.map((ws) => (ws.id === id ? { ...ws, nodes, edges } : ws)))
@@ -214,17 +223,10 @@ const removeWorksheet = (id: string) => {
         </div>
         {/* Test Panel */}
         {showTestPanel && (
-        <div
-          className="fixed top-15 right-0 w-96 h-[calc(100vh-70px)]
-                    bg-white dark:bg-gray-800 border-l dark:border-gray-700
-                    shadow-sm z-[99999] pointer-events-auto"
-        >
-          <TestPanel
-            worksheet={currentWorksheet}
-            onClose={() => setShowTestPanel(false)}
-          />
-        </div>
-      )}
+  <div className="absolute right-0 top-[70px] z-[9998] w-96 h-[calc(100vh-70px)] bg-white dark:bg-gray-800 border-l dark:border-gray-700 shadow-lg">
+    <TestPanel worksheet={currentWorksheet} onClose={() => setShowTestPanel(false)} />
+  </div>
+)}
 
       </div>
     </div>

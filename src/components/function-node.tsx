@@ -30,6 +30,7 @@ import { FUNCTION_META } from "@/lib/functionMeta"
 interface FunctionNodeProps {
   id: string
   data: {
+    fc: string // Function code identifier
     id: string
     name: string
     operation: string
@@ -54,6 +55,7 @@ export default function FunctionNode({ id, data }: FunctionNodeProps) {
   const inputTypes = meta?.inputTypes || []
   const outputType = meta?.outputType || "unknown"
   const maxInputs = meta?.numInputs ?? 1
+  const fc=meta?.fc || data.fc
 
   // Determine actual inputs (support array or single value)
   const inputsArray = Array.isArray(data.input) ? data.input : data.input !== undefined && data.input !== null ? [data.input] : []
@@ -183,14 +185,14 @@ const getStatusIcon = () => {
           {/* Name / ID */}
           <div className="flex items-center mb-1 gap-1">
             <h3 className="font-medium text-sm text-gray-800 dark:text-gray-100">
-              {data.id}
+              {data.fc}
             </h3>
           </div>
 
           {/* ID and Types */}
           <div className="text-[11px] text-muted-foreground dark:text-gray-400 mb-2 flex flex-row gap-2">
             <span>
-              <span className="font-semibold">ID:</span> {data.id}
+              <span className="font-semibold">ID:</span> {data.fc}
             </span>
             <span>
               <span className="font-semibold">Input:</span> {inputTypes.join(", ")}

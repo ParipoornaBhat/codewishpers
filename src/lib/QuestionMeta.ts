@@ -1,47 +1,84 @@
-const startTime = new Date("2025-08-12T18:15:00+05:30");
-const endTime = new Date("2025-08-19T04:00:00+05:30");
+const startTime = new Date("2025-08-20T18:15:00+05:30");
+const endTime = new Date("2025-08-23T04:00:00+05:30");
+
+// const startTime = new Date("2025-08-23T10:45:00+05:30");
+// const endTime = new Date("2025-08-23T11:45:00+05:30");
+
+export const QuestionCode =["Q001", "Q002", "Q003", "Q004", "Q005","Q006","Q007","Q008","Q009"];
+
 
 export const QuestionMeta = [
   {
-    title: "Question 1",
-    description: `Ancient Mystery Spell has locked the sacred number X in a mathematical cage. You remember you are the disciple of RD Sharma. Use your abilities to free X and get blessed.
-
-CAGE: [2^(log5 X)]
-`,
+    title: "Question",//O5 (x*50)
+    description: `In the Merchant's Maze, three ancient coins lie hidden.
+ One is marked with two blades,
+ one with five stars,
+ and one with a wheel that turns both together.
+The scroll says:
+“Choose your coins wisely and join them with X.
+ When their combined value matches the half-century mark,
+ the vault shall open.”`,
     difficulty: "Easy",
     startTime,
     endTime,
-    winner: 0,
-    runnerUp: 0,
-    secondRunnerUp: 0,
-    participant: 0,
-  testCases: [
-  { input: "[1]", expected: "1.0000", isVisible: true },
-  { input: "[2]", expected: "5.0000", isVisible: true },
-  { input: "[3]", expected: "11.9193", isVisible: true },
-    { input: "[15]", expected: "499.9320", isVisible: true },
-  { input: "[16]", expected: "625.0000", isVisible: true },
-  { input: "[4]", expected: "25.0000", isVisible: true },
-  { input: "[5]", expected: "40.5148", isVisible: true },
-  { input: "[7]", expected: "85.7250", isVisible: true },
-  { input: "[8]", expected: "125.0000", isVisible: true },
+    winner: 30,
+    runnerUp: 20,
+    secondRunnerUp: 10,
+    participant: 5,
+    testCases: [
+  { input: "0", expected: "0", isVisible: true },
+  { input: "1", expected: "50", isVisible: true },
+  { input: "2", expected: "100", isVisible: true },
+  { input: "5", expected: "250", isVisible: true },
+  { input: "10", expected: "500", isVisible: true },
+  { input: "20", expected: "1000", isVisible: true },
+  { input: "7", expected: "350", isVisible: true },
+  { input: "15", expected: "750", isVisible: true },
+  { input: "-3", expected: "-150", isVisible: true },
+  { input: "100", expected: "5000", isVisible: true }
+],
 
-  { input: "[9]", expected: "173.9791", isVisible: true },
-  { input: "[10]", expected: "205.0730", isVisible: true },
-  { input: "[12]", expected: "296.8966", isVisible: true },
-  { input: "[6]", expected: "60.4662", isVisible: true },
-  { input: "[20]", expected: "1030.3661", isVisible: true },
-  { input: "[25]", expected: "1697.0563", isVisible: true },
+  },
+    {
+    title: "Question",//Q6 ((x*10)-2)
+    description: `In the Scholar's Ledger, every number undergoes a peculiar ritual.
+    First, it is multiplied by ten,
+    then a portion of five is taken away,
+    yet a gift of three is returned.
+
+    The scroll says:
+    “Follow this sequence faithfully, and the true value shall emerge.”`,    
+    
+    
+    difficulty: "Easy",
+    startTime,
+    endTime,
+    winner: 30,
+    runnerUp: 20,
+    secondRunnerUp: 10,
+    participant: 5,
+    testCases: [
+  { input: "1", expected: "8", isVisible: true },
+  { input: "2", expected: "18", isVisible: true },
+  { input: "3", expected: "28", isVisible: true },
+  { input: "-7", expected: "-72", isVisible: true },
+  { input: "5", expected: "48", isVisible: true },
+  { input: "6", expected: "58", isVisible: true },
+  { input: "7", expected: "68", isVisible: true },
+  { input: "9", expected: "88", isVisible: true },
+  { input: "-4", expected: "-42", isVisible: true },
+   { input: "0", expected: "-2", isVisible: true },
+  { input: "-6", expected: "-62", isVisible: true },
 ],
 
   },
   {
-    title: "Question 2",
+    title: "Question",//Q2 3663-->[36,63]-->TRUE/FALSE
     description: `Long ago, the great mathematician Aryabhata enchanted certain numbers with a secret property to test the worthiness of his students.
  It is said that a true balanced number carries equal weight in its first half and its second half — like a heart beating in perfect symmetry.
 Your task is to reveal whether the given number holds this sacred balance.
 `,
-    difficulty: "Easy",
+    difficulty: "Medium",
     startTime,
     endTime,
     winner: 0,
@@ -62,7 +99,7 @@ Your task is to reveal whether the given number holds this sacred balance.
     { input: "700007", expected: "true", isVisible: true },
   { input: "561056", expected: "false", isVisible: true },
     { input: "1212", expected: "true", isVisible: true },
-    { input: "345654", expected: "true", isVisible: true },
+    { input: "345654", expected: "false", isVisible: true },
 
   { input: "820028", expected: "true", isVisible: true },
   { input: "1001", expected: "true", isVisible: true },
@@ -74,8 +111,9 @@ Your task is to reveal whether the given number holds this sacred balance.
 
   },
   {
-    title: "Question 3",
-    description: `The accountant of Aryabhata's temple encoded numbers into their prefix sums to guard secret scrolls. You must decode them to get the original numbers.
+    title: "Question",//Q3 //PREFIX SUM
+    description: `The accountant of Aryabhata's temple encoded numbers into their 
+    prefix sums to guard secret scrolls. You must decode them to get the original numbers.
 Encoded: Prefix Sum Array
 Goal: Recover the original numbers
 `,
@@ -102,7 +140,7 @@ Goal: Recover the original numbers
 
   },
   {
-    title: "Question 4",
+    title: "Question",//Q4 //[X,Y,Z]-->[XORresult]-->ANS
     description: `In the Bitcrypt, every spirit appears twice — except one lost soul.
 “Find the one who walks alone… or be lost forever.”
 `,
@@ -139,17 +177,13 @@ Goal: Recover the original numbers
 
 
   },
-  {
-    title: "Question 5",
-    description: `In the Merchant’s Maze, three ancient coins lie hidden.
- One is marked with two blades,
- one with five stars,
- and one with a wheel that turns both together.
-The scroll says:
-“Choose your coins wisely and join them with X.
- When their combined value matches the half-century mark,
- the vault shall open.”`,
-    difficulty: "Medium",
+    {
+    title: "Question",//Q7 //BINARY SUBSTRACTION
+    description: `In the Hall of Bits two numbers climb an old scale. One is turned 
+    inside-out and bound to the other; when they meet the remainder whispers a 
+    string of zeros and ones — prefixed by a sorrowful - if the balance tips the other way.
+    Speak the final bit-song.`,
+    difficulty: "Easy",
     startTime,
     endTime,
     winner: 30,
@@ -157,17 +191,105 @@ The scroll says:
     secondRunnerUp: 10,
     participant: 5,
     testCases: [
-  { input: "0", expected: "0", isVisible: true },
-  { input: "1", expected: "50", isVisible: true },
-  { input: "2", expected: "100", isVisible: true },
-  { input: "5", expected: "250", isVisible: true },
-  { input: "10", expected: "500", isVisible: true },
-  { input: "20", expected: "1000", isVisible: true },
-  { input: "7", expected: "350", isVisible: true },
-  { input: "15", expected: "750", isVisible: true },
-  { input: "-3", expected: "-150", isVisible: true },
-  { input: "100", expected: "5000", isVisible: true }
+  { input: "[2,2]", expected: "0", isVisible: true },
+  { input: "[5,3]", expected: "2", isVisible: true },
+  { input: "[10,4]", expected: "6", isVisible: true },
+  { input: "[7,7]", expected: "0", isVisible: true },
+  { input: "[15,1]", expected: "14", isVisible: true },
+  { input: "[8,2]", expected: "6", isVisible: true },
+  { input: "[20,5]", expected: "15", isVisible: true },
+  { input: "[6,9]", expected: "-3", isVisible: true },
+  { input: "[0,13]", expected: "-13", isVisible: true },
+  { input: "[100,50]", expected: "50", isVisible: true },
 ],
 
   },
+    {
+  title: "Question", // Q8 //555-->[5,5,5]--->[15]-->15
+  description: `A number steps into the Chamber of Tokens and returns as a 
+  small tally — sometimes bearing a leading '-' if the original carried sorrow.
+  Report the tally.`,
+  difficulty: "Easy",
+  startTime,
+  endTime,
+  winner: 30,
+  runnerUp: 20,
+  secondRunnerUp: 10,
+  participant: 5,
+
+  testCases: [
+    { input: "1", expected: "1", isVisible: true },
+    { input: "12", expected: "3", isVisible: true },
+    { input: "123", expected: "6", isVisible: true },
+    { input: "999", expected: "27", isVisible: true },
+    { input: "1001", expected: "2", isVisible: true },
+    { input: "0", expected: "0", isVisible: true },
+    { input: "-7", expected: "-7", isVisible: true },
+    { input: "-123", expected: "-6", isVisible: true },
+    { input: "305", expected: "8", isVisible: true },
+    { input: "2147483647", expected: "46", isVisible: true },
+    { input: "1000000000", expected: "1", isVisible: true },
+    { input: "9876543210", expected: "45", isVisible: true }
+  ]
+},
+    {
+    title: "Question",//Q1 /HARDEST
+    description: `Ancient Mystery Spell has locked the sacred number X in a mathematical cage. You remember you are the disciple of RD Sharma. Use your abilities to free X and get blessed.
+
+CAGE: [2^(log5 X)]
+`,
+    difficulty: "Easy",
+    startTime,
+    endTime,
+    winner: 0,
+    runnerUp: 0,
+    secondRunnerUp: 0,
+    participant: 0,
+testCases: [
+  { input: "[1]", expected: "1.0000", isVisible: true },
+  { input: "[2]", expected: "5.0000", isVisible: true },
+  { input: "[3]", expected: "12.8186", isVisible: true },
+  { input: "[15]", expected: "538.0211", isVisible: true },
+  { input: "[16]", expected: "625.0000", isVisible: true },
+  { input: "[4]", expected: "25.0000", isVisible: true },
+  { input: "[5]", expected: "41.9718", isVisible: true },
+  { input: "[7]", expected: "91.6763", isVisible: true },
+  { input: "[8]", expected: "125.0000", isVisible: true },
+  { input: "[9]", expected: "164.3170", isVisible: true },
+  { input: "[10]", expected: "209.8592", isVisible: true },
+  { input: "[12]", expected: "320.4655", isVisible: true },
+  { input: "[6]", expected: "64.0931", isVisible: true },
+  { input: "[20]", expected: "1049.2962", isVisible: true },
+  { input: "[25]", expected: "1761.6360", isVisible: true },
+],
+
+  },
+ {
+  title: "Question", // Q9 // BINARY ADDITION 
+  description: `Two numbers step into the Chamber of Bits and merge their voices into a single chorus of ones and zeros. If the chorus leans the other way, a sorrowful '-' sighs before it. Speak the final chorus.`,
+
+  difficulty: "Easy",
+  startTime,
+  endTime,
+  winner: 0,
+  runnerUp: 0,
+  secondRunnerUp: 0,
+  participant: 0,
+
+testCases: [
+  { input: "[0,0]", expected: "0", isVisible: true },
+  { input: "[1,1]", expected: "2", isVisible: true },
+  { input: "[2,3]", expected: "5", isVisible: true },
+  { input: "[5,3]", expected: "8", isVisible: true },
+  { input: "[10,6]", expected: "16", isVisible: true },
+  { input: "[7,9]", expected: "16", isVisible: true },
+  { input: "[100,50]", expected: "150", isVisible: true },
+  { input: "[255,1]", expected: "256", isVisible: true },
+  { input: "[1024,512]", expected: "1536", isVisible: true },
+  { input: "[-3,1]", expected: "-2", isVisible: true },
+  { input: "[-5,-11]", expected: "-16", isVisible: true },
+  { input: "[999,1]", expected: "1000", isVisible: true }
+]
+},
 ];
+

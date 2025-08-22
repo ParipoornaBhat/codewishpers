@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef  } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -20,6 +21,7 @@ import { FUNCTION_META } from "@/lib/functionMeta" // Importing the function met
 import { getSession } from "next-auth/react"
 import {SubmissionHistory} from "@/components/submissionhistory"
 import type { JsonValue } from "@prisma/client/runtime/library"
+import { QuestionCode } from "@/lib/QuestionMeta"
  type HandleTestProps = {
   fnMutations: Record<string, any>
   updateNode?: (id: string, data: any) => void
@@ -76,11 +78,12 @@ export default function QuestionCard() {
 // console.log("Current worksheet:", current)
 
 
+
+
   const { QuestionCardOpen: isOpen, setQuestionCardOpen: setIsOpen } = usePlaySettings()
   const [questionCode, setQuestionCode] = useState("")
   const [questionData, setQuestionData] = useState<QuestionData | null>(null)
-const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
-
+  const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
 
   const { mutate: selectQuestion, isPending: isQuestionPending } = api.question.questionselect.useMutation({
     onSuccess: (data) => {
@@ -118,12 +121,41 @@ const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
       isVisible: typeof tc.isVisible === "boolean" ? tc.isVisible : true // default to true if missing
     }))
   )}
+    localStorage.setItem("question-code", data.code!)
+
 },
     onError: (err) => {
       handleReset();
       toast.error(`Failed to load question: ${err.message}`)
     },
   })
+  // --- Mount + hydrate once, and load question ---
+useEffect(() => {
+  // run once on client mount
+  const saved = localStorage.getItem("question-code")
+  if (saved) {
+    const code = saved.toUpperCase()
+    setQuestionCode(code)
+    // load the question (selectQuestion is your mutation)
+    selectQuestion({ code })
+  }
+}, []) // keep this to auto-load on page refresh / revisit
+
+// --- Guarded sync to localStorage for subsequent changes ---
+const hasHydratedRef = useRef(false)
+useEffect(() => {
+  // mark hydrated after first render (so we don't treat initial mount specially)
+  if (!hasHydratedRef.current) {
+    hasHydratedRef.current = true
+    return
+  }
+
+  if (!questionCode || !questionCode.trim()) return // don't write empty
+  const normalized = questionCode.toUpperCase()
+  if (localStorage.getItem("question-code") !== normalized) {
+    localStorage.setItem("question-code", normalized)
+  }
+}, [questionCode])
     const { mutate: selectQuestion2, isPending: isQuestionPending2 } = api.question.questionselect.useMutation({
     onSuccess: (data) => {
       if(data.success===false){
@@ -428,17 +460,6 @@ const handleSubmitCode = async () => {
 }
 
 
-
-useEffect(() => {
-  const savedCode = localStorage.getItem("question-code")
-  if (savedCode) {
-     const code = savedCode.toUpperCase()
-    setQuestionCode(code)
-    selectQuestion({ code }) 
-  }
-}, [])
-
-
   const passedCount = testResults.filter((r) => r === true).length
   const totalCount = testCases.length
 
@@ -486,7 +507,7 @@ const filteredSubmissions = useMemo(
               </Button>
             </div>
             <CardTitle className="text-center text-2xl font-bold">
-              Enter Question Code
+              {questionData ? `${questionData.code}`  : "Enter Question Code"}
             </CardTitle>
           </CardHeader>
 
@@ -501,17 +522,24 @@ const filteredSubmissions = useMemo(
                     }}
                   >
                     <Label htmlFor="questionCode" className="text-lg">Question Code</Label>
-                    <Input
-                      id="questionCode"
+                    <Select
                       value={questionCode}
-                      onChange={(e) => {
-                        const value = e.target.value.toUpperCase();
+                      onValueChange={(value) => {
                         setQuestionCode(value);
                         localStorage.setItem("question-code", value);
                       }}
-                      placeholder="Q001"
-                      className="text-md"
-                    />
+                    >
+                      <SelectTrigger className="text-md">
+                        <SelectValue placeholder="Select Code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {QuestionCode.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {code}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
                     <Button
                       type="submit" // important for Enter key to trigger

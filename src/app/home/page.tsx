@@ -81,7 +81,7 @@ export default function HomePage() {
               dark:bg-gradient-to-r dark:from-teal-600 dark:via-purple-600 dark:to-amber-600"
             variants={itemVariants}
           >
-            CodeWhispers - Round 2
+            Code Whisperer - Round 2
           </motion.h1>
           <motion.p
             className="text-lg text-muted-foreground md:text-xl"
