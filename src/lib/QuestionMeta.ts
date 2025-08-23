@@ -268,24 +268,24 @@ CAGE: [2^(log5 X)]
 testCases: [
   { input: "[1]", expected: "1.0000", isVisible: true },
   { input: "[2]", expected: "5.0000", isVisible: true },
-  { input: "[3]", expected: "12.8186", isVisible: true },
-  { input: "[15]", expected: "538.0211", isVisible: true },
+  { input: "[3]", expected: "12.8194", isVisible: true },
+  { input: "[15]", expected: "538.0293", isVisible: true },
   { input: "[16]", expected: "625.0000", isVisible: true },
   { input: "[4]", expected: "25.0000", isVisible: true },
-  { input: "[5]", expected: "41.9718", isVisible: true },
-  { input: "[7]", expected: "91.6763", isVisible: true },
+  { input: "[5]", expected: "41.9700", isVisible: true },
+  { input: "[7]", expected: "91.6829", isVisible: true },
   { input: "[8]", expected: "125.0000", isVisible: true },
-  { input: "[9]", expected: "164.3170", isVisible: true },
-  { input: "[10]", expected: "209.8592", isVisible: true },
-  { input: "[12]", expected: "320.4655", isVisible: true },
-  { input: "[6]", expected: "64.0931", isVisible: true },
-  { input: "[20]", expected: "1049.2962", isVisible: true },
-  { input: "[25]", expected: "1761.6360", isVisible: true },
+  { input: "[9]", expected: "164.3104", isVisible: true },
+  { input: "[10]", expected: "209.8498", isVisible: true },
+  { input: "[12]", expected: "320.4848", isVisible: true },
+  { input: "[6]", expected: "64.0970", isVisible: true },
+  { input: "[20]", expected: "1049.2488", isVisible: true },
+  { input: "[25]", expected: "1761.7602", isVisible: true },
 ],
 
   },
  {
-  title: "Question", // Q9 // BINARY ADDITION 
+  title: "DEMO Question", // Q9 // BINARY ADDITION DEMO
   description: `Two numbers step into the Chamber of Bits and merge their voices into a single chorus of ones and zeros. If the chorus leans the other way, a sorrowful '-' sighs before it. Speak the final chorus.`,
   difficulty: "Easy",
   startTime,
@@ -313,6 +313,7 @@ testCases: [
 ];
 
 QuestionMeta.forEach(q => {
+  if (q.title === "DEMO Question") return;
   if (q.difficulty === "Easy") Object.assign(q, Easy);
   else if (q.difficulty === "Medium") Object.assign(q, Medium);
   else if (q.difficulty === "Hard") Object.assign(q, Hard);

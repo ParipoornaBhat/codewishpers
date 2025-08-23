@@ -466,22 +466,28 @@ export const functionRouter = createTRPCRouter({
   // Q004S: buildDynamicProcedure("Q004S", (x: number) => x ** 2),
 
   Q001S: buildDynamicProcedure("Q001S", (arr: number[]) => {
-    if (!Array.isArray(arr) || arr.length < 1 || typeof arr[0] !== "number" || !Number.isInteger(arr[0])) {
-      return {
-        success: false,
-        error: `Expected an array like [10] or [2, 1], received ${JSON.stringify(arr)}`,
-      };
-    }
-    const firstInt = arr[0];
-    if (firstInt <= 0) {
-      return {
-        success: false,
-        error: `Log base 2 is undefined for non-positive numbers. Received ${firstInt}`,
-      };
-    }
-    const result = Math.pow(5, Math.log(firstInt) / Math.log(2));
-    return Number.isInteger(result) ? result : parseFloat(result.toFixed(4));
-  }),
+  if (!Array.isArray(arr) || arr.length < 1 || typeof arr[0] !== "number" || !Number.isInteger(arr[0])) {
+    return {
+      success: false,
+      error: `Expected an array like [10] or [2, 1], received ${JSON.stringify(arr)}`,
+    };
+  }
+
+  const firstInt = arr[0];
+  if (firstInt <= 0) {
+    return {
+      success: false,
+      error: `Log base 2 is undefined for non-positive numbers. Received ${firstInt}`,
+    };
+  }
+
+  // ✅ This is equivalent to: fn3(fn2(fn1(arr)))
+const log2 = parseFloat((Math.log(firstInt) / Math.log(2)).toFixed(4));
+const result = Math.pow(5, log2);
+
+  return Number.isInteger(result) ? result : parseFloat(result.toFixed(4));
+}),
+
   Q002S: buildDynamicProcedure("Q002S", (x: number) => {
     if (typeof x !== "number" || x < 0) {
       return {
