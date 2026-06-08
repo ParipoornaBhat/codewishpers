@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Separator } from "@/app/_components/ui/seperator";
 import { FaInstagram, FaLinkedin } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/useSessionMock";
 
 export function Footer() {
   const { data: session } = useSession();

@@ -122,7 +122,7 @@ const { mutate: reset5Question, isPending: isResetting5 } = api.question.resetDB
       setTestCases([{ id: nanoid(), input: "", expectedOutput: "", isVisible: true }])
       window.location.reload() // Refresh the page to show new question
     },
-    onError: (err) => {
+    onError: (err: any) => {
       toast.error(err.message || "Something went wrong.")
     },
   })
@@ -550,7 +550,7 @@ const { mutate: reset5Question, isPending: isResetting5 } = api.question.resetDB
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
   {paginatedQuestions.map((question) => {
-    const visibleTestCases = question.testCases.filter(tc => tc.isVisible).length
+    const visibleTestCases = question.testCases.filter((tc: any) => tc.isVisible).length
     const totalTestCases = question.testCases.length
     const passRate = question.passRate ?? 0
 

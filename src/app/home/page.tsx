@@ -12,10 +12,11 @@ import {
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, useMockSessionStore } from "@/lib/useSessionMock";
 
 export default function HomePage() {
   const { data: session } = useSession();
+  const { setRole } = useMockSessionStore();
   const role = session?.user.role;
   const teamName = session?.user.teamName;
 
@@ -95,28 +96,27 @@ export default function HomePage() {
             className="flex flex-col gap-4 sm:flex-row justify-center mt-6"
             variants={itemVariants}
           >
-            {!session && (
-              <Link href="/auth/signin">
-                <Button
-                  size="lg"
-                  className="bg-blue-600 text-white rounded-lg py-3 px-6 transition-all duration-300 hover:bg-blue-700 hover:shadow-md"
-                >
-                  Login as Team
-                </Button>
-              </Link>
-            )}
+            <Button
+              size="lg"
+              onClick={() => {
+                setRole("TEAM");
+                window.location.href = "/play";
+              }}
+              className="bg-teal-600 text-white rounded-lg py-3 px-6 transition-all duration-300 hover:bg-teal-700 hover:shadow-md cursor-pointer"
+            >
+              Play Round 2 (Team Mode)
+            </Button>
 
-            {session && role === "TEAM" && (
-              <Link href="/play">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-2 border-green-600 text-green-600 rounded-lg py-3 px-6 transition-all duration-300 hover:bg-green-600 hover:text-white hover:border-green-700"
-                >
-                  Play Round 2
-                </Button>
-              </Link>
-            )}
+            <Button
+              size="lg"
+              onClick={() => {
+                setRole("ADMIN");
+                window.location.href = "/dashboard";
+              }}
+              className="bg-purple-600 text-white rounded-lg py-3 px-6 transition-all duration-300 hover:bg-purple-700 hover:shadow-md cursor-pointer"
+            >
+              Admin Dashboard (Admin Mode)
+            </Button>
           </motion.div>
         </div>
       </motion.div>

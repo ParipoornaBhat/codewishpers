@@ -43,7 +43,7 @@ const { data, isLoading } = api.question.getById.useQuery({ id: questionId });
       await utils.question.getById.invalidate({ id: questionId });
       setEditable(false);
     },
-    onError: (err) => {
+    onError: (err: any) => {
       toast.error(err.message || "Error updating question");
     },
   });

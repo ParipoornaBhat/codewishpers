@@ -4,18 +4,23 @@ import { QuestionMeta } from '@/lib/QuestionMeta'; // make sure this file export
 const prisma = new PrismaClient();
 
 async function seedTeams() {
-  const teamNames = [
-    'team1',
-    'team2',
-    'team3',
-    'team4',
-    'team5',
-    'team6',
-    'team7',
-    'team8',
-    'team9',
-    'team10',
-  ];
+  const teamNames =  [
+  "backlogbandits",
+  "2d-buggers",
+  "x",
+  "codex",
+  "skibidi",
+  "mugiwara",
+  "teamblue",
+  "dictators",
+  "codestorm",
+  "t-rex",
+  "apex",
+  "bugbusters",
+  "wobblingvictus",
+  "dora_theencoders",
+  "lazywizards",
+]; 
 
   for (const name of teamNames) {
     await prisma.team.upsert({

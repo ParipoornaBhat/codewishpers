@@ -18,9 +18,9 @@ import {  XCircle, Loader2, Timer  } from "lucide-react"
 import { useWorksheetStore } from "@/lib/stores/useWorksheetStore"
 import { executeGraphAndCheckOutput } from "@/lib/testRunner"
 import { FUNCTION_META } from "@/lib/functionMeta" // Importing the function metadata
-import { getSession } from "next-auth/react"
+import { getSession } from "@/lib/useSessionMock"
 import {SubmissionHistory} from "@/components/submissionhistory"
-import type { JsonValue } from "@prisma/client/runtime/library"
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
 import { QuestionCode } from "@/lib/QuestionMeta"
  type HandleTestProps = {
   fnMutations: Record<string, any>
@@ -86,7 +86,7 @@ export default function QuestionCard() {
   const [now, setNow] = useState(DateTime.now().setZone("Asia/Kolkata"))
 
   const { mutate: selectQuestion, isPending: isQuestionPending } = api.question.questionselect.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
   if (!data) {
     toast.error("Invalid Question Code!")
     return
@@ -94,7 +94,7 @@ export default function QuestionCard() {
 
   const formattedData: QuestionData = {
     ...data,
-    submissions: data.submissions?.map((s) => ({
+    submissions: data.submissions?.map((s: any) => ({
       ...s,
       createdAt: typeof s.createdAt === "string"
         ? new Date(s.createdAt)
@@ -124,7 +124,7 @@ export default function QuestionCard() {
     localStorage.setItem("question-code", data.code!)
 
 },
-    onError: (err) => {
+    onError: (err: any) => {
       handleReset();
       toast.error(`Failed to load question: ${err.message}`)
     },
@@ -157,7 +157,7 @@ useEffect(() => {
   }
 }, [questionCode])
     const { mutate: selectQuestion2, isPending: isQuestionPending2 } = api.question.questionselect.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       if(data.success===false){
         toast.error(`${data.message}`)
         return
@@ -170,7 +170,7 @@ useEffect(() => {
   
   const formattedData: QuestionData = {
     ...data,
-    submissions: data.submissions?.map((s) => ({
+    submissions: data.submissions?.map((s: any) => ({
       ...s,
       createdAt: typeof s.createdAt === "string"
         ? new Date(s.createdAt)
@@ -200,7 +200,7 @@ useEffect(() => {
       window.location.reload();
 
 },
-    onError: (err) => {
+    onError: (err: any) => {
       handleReset();
       toast.error(`Failed to load question: ${err.message}`)
     },
@@ -258,7 +258,7 @@ const end = questionData?.endTime ? DateTime.fromISO(questionData.endTime).setZo
   // }, [questionData?.testCases]);
   
 const { mutate: saveSubmissionMutation, isPending } = api.submission.save.useMutation({
-  onSuccess: (data) => {
+  onSuccess: (data: any) => {
     // toast.success("Submission saved successfully ✅", {
     //   description: `Code: ${data.submissionCode}`,
     // })
@@ -271,7 +271,7 @@ setSubmittedAt(
 
 )
   },
-  onError: (error) => {
+  onError: (error: any) => {
     toast.error("Failed to save submission ❌", {
       description: error.message,
     })

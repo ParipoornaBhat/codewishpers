@@ -10,7 +10,7 @@ import { CheckCircle, ChevronDown, ChevronUp, PlusIcon, XCircle } from "lucide-r
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import type { JsonValue } from "@prisma/client/runtime/library"
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
 import { usePlaySettings } from "@/lib/stores/usePlaySettings"
 import { useMemo } from "react"
 

@@ -1,8 +1,8 @@
-const startTime = new Date("2025-08-20T18:15:00+05:30");
-const endTime = new Date("2025-08-23T04:00:00+05:30");
+// const startTime = new Date("2025-08-20T18:15:00+05:30");
+// const endTime = new Date("2025-08-25T04:00:00+05:30");
 
-// const startTime = new Date("2025-08-23T10:45:00+05:30");
-// const endTime = new Date("2025-08-23T11:45:00+05:30");
+const startTime = new Date("2025-08-23T10:45:00+05:30");
+const endTime = new Date("2025-08-23T11:35:00+05:30");
 
 const Easy = {
   winner: 20,
@@ -25,6 +25,7 @@ const Hard = {
 
 // Apply to each QuestionMeta entry:
 const QuestionCode =["Q001", "Q002", "Q003", "Q004", "Q005","Q006","Q007","Q008","Q009"];
+// const QuestionCode =["Q009"];
 
 
 const QuestionMeta = [

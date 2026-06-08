@@ -3,7 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/app/_components/ui/button";
 import { Label } from "@/app/_components/ui/label";
-import { signOut } from "next-auth/react"
 import { User} from "lucide-react"
 import { FaHome, FaInfoCircle, FaBoxOpen, FaHistory, FaTachometerAlt } from "react-icons/fa";
 import { Plus, Play, Save, Download } from "lucide-react"
@@ -23,7 +22,7 @@ import { ModeToggle } from "@/app/_components/ui/mode-toggle";
 import { FaCircleUser } from "react-icons/fa6";
 import { IoMdMenu } from "react-icons/io";
 import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react"
+import { useSession, signOut, useMockSessionStore } from "@/lib/useSessionMock";
 import { useScrollDirection } from "@/app/_components/other/use-scroll-direction"; // Custom hook to detect scroll direction
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react"
@@ -38,6 +37,7 @@ const pathname = usePathname()
 const isPlayPage = pathname === "/play"
 
   const { data: session } = useSession()
+  const { setRole } = useMockSessionStore()
   const role = session?.user.role
   const perms = session?.user.permissions ?? []
   const has = (perm: string) => perms.includes(perm)
@@ -102,8 +102,8 @@ const [open, setOpen] = useState(false);
 
         {/* Desktop Nav */}
         <nav className="hidden lg:flex items-center gap-6">
-          <Link href="/" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
-            Home
+          <Link href="/about" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
+            Showcase Info
           </Link>
           <Link href="/r1" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
             Round_1
@@ -149,6 +149,21 @@ const [open, setOpen] = useState(false);
           </div>
           </div>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="bg-transparent border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950 font-semibold h-9 mr-1">
+                Role: {role === "ADMIN" ? "Admin" : "Team"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+              <DropdownMenuItem onClick={() => setRole("TEAM")}>
+                Team (Participant) Mode
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRole("ADMIN")}>
+                Admin Mode
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <ModeToggle />
           
           {session ? (
@@ -285,9 +300,9 @@ const [open, setOpen] = useState(false);
     <span className="sr-only">FLC Packaging</span>
   </Link>
 
-  <Link href="/" onClick={handleClose}  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
-    <FaHome className="h-5 w-5" />
-    Home
+  <Link href="/about" onClick={handleClose}  className="flex items-center gap-2 text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
+    <FaInfoCircle className="h-5 w-5" />
+    Showcase Info
   </Link>
             <Link href="/r1" className="text-gray-700 hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400">
             Round_1
