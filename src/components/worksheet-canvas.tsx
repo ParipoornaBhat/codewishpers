@@ -125,6 +125,46 @@ useEffect(() => {
   prevFuncInputEdgesRef.current = new Map()
 }, [worksheetId])
 
+  // Mobile tap-to-add listener
+  useEffect(() => {
+    const handleAddNode = (e: Event) => {
+      const func = (e as CustomEvent).detail;
+      if (!func) return;
+
+      const id = `node_${func.fc}_${Date.now()}`;
+      const count = nodes.filter((n) => n.type === "function").length;
+      const x = 300 + (count % 3) * 50;
+      const y = 150 + (count % 3) * 50;
+
+      const newNode = {
+        id,
+        type: "function",
+        position: { x, y },
+        data: {
+          label: func.displayName || `Function #${func.fc.replace(/\D/g, "")}`,
+          operation: func.id,
+          numInputs: func.numInputs,
+          outputType: func.outputType,
+          inputTypes: func.inputTypes,
+        },
+      };
+
+      setNodes((nds) => {
+        const next = nds.concat(newNode);
+        saveToLocalStorage(worksheetId, next, edges);
+        return next;
+      });
+
+      toast.success(`Added ${func.fc} to canvas`);
+    };
+
+    window.addEventListener("add-function-node", handleAddNode);
+    return () => {
+      window.removeEventListener("add-function-node", handleAddNode);
+    };
+  }, [nodes, edges, worksheetId]);
+
+
 
   // Execute the function chain whenever nodes or edges change
 //  useEffect(() => {
@@ -640,33 +680,36 @@ const clearAllNodes = () => {
   return (
     <div className="w-full h-full relative">
       {/* Toolbar */}
-      <div className="absolute top-4 left-4 z-10 flex gap-2">
+      <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-1.5 md:gap-2 max-w-[calc(100vw-32px)] md:max-w-none">
         <Button
           size="sm"
           variant={eraserMode ? "default" : "outline"}
           onClick={toggleEraserMode}
           className={`bg-white dark:bg-gray-700 dark:border-gray-600 shadow-md ${eraserMode ? "bg-red-500 text-white hover:bg-red-600" : ""}`}
+          title={eraserMode ? "Exit Eraser" : "Eraser Tool"}
         >
-          {eraserMode ? <MousePointer className="w-4 h-4 mr-1" /> : <Eraser className="w-4 h-4 mr-1" />}
-          {eraserMode ? "Exit Eraser" : "Eraser Tool"}
+          {eraserMode ? <MousePointer className="w-4 h-4 sm:mr-1" /> : <Eraser className="w-4 h-4 sm:mr-1" />}
+          <span className="hidden sm:inline">{eraserMode ? "Exit Eraser" : "Eraser Tool"}</span>
         </Button>
         <Button
           size="sm"
           variant={zoomLocked ? "default" : "outline"}
           onClick={toggleZoomLock}
           className={`bg-white dark:bg-gray-700 dark:border-gray-600 shadow-md ${zoomLocked ? "bg-blue-500 text-white hover:bg-blue-600" : ""}`}
+          title={zoomLocked ? "Zoom Locked" : "Lock Zoom"}
         >
-          {zoomLocked ? <Lock className="w-4 h-4 mr-1" /> : <Unlock className="w-4 h-4 mr-1" />}
-          {zoomLocked ? "Zoom Locked" : "Lock Zoom"}
+          {zoomLocked ? <Lock className="w-4 h-4 sm:mr-1" /> : <Unlock className="w-4 h-4 sm:mr-1" />}
+          <span className="hidden sm:inline">{zoomLocked ? "Zoom Locked" : "Lock Zoom"}</span>
         </Button>
         <Button
           size="sm"
           variant="outline"
           onClick={resetWorksheet}
           className="bg-white dark:bg-gray-700 dark:border-gray-600 shadow-md"
+          title="Refresh Values"
         >
-          <RotateCcw className="w-4 h-4 mr-1" />
-          Refresh Values
+          <RotateCcw className="w-4 h-4 sm:mr-1" />
+          <span className="hidden sm:inline">Refresh Values</span>
         </Button>
         
 
@@ -675,18 +718,20 @@ const clearAllNodes = () => {
           variant="outline"
           onClick={clearAllConnections}
           className="bg-white dark:bg-gray-700 dark:border-gray-600 shadow-md"
+          title="Clear All Lines"
         >
-          <Eraser className="w-4 h-4 mr-1" />
-          Clear All Lines
+          <Eraser className="w-4 h-4 sm:mr-1" />
+          <span className="hidden sm:inline">Clear All Lines</span>
         </Button>
         <Button
           size="sm"
           variant="outline"
           onClick={clearAllNodes}
           className="bg-white dark:bg-gray-700 dark:border-gray-600 shadow-md"
+          title="Clear All"
         >
-          <Trash2 className="w-4 h-4 mr-1" />
-          Clear All
+          <Trash2 className="w-4 h-4 sm:mr-1" />
+          <span className="hidden sm:inline">Clear All</span>
         </Button>
       </div>
 

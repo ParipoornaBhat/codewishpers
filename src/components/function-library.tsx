@@ -45,13 +45,30 @@ const filteredFunctions = FUNCTION_META
     event.dataTransfer.effectAllowed = "move"
   }
 
+  const handleCardClick = (func: any) => {
+    const isMobileOrTouch = window.innerWidth < 768 || (typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0));
+    if (isMobileOrTouch) {
+      const event = new CustomEvent("add-function-node", {
+        detail: {
+          ...func,
+          displayName: getDisplayName(func.fc),
+        },
+      });
+      window.dispatchEvent(event);
+      setIsOpen(false); // Close drawer to show canvas
+    }
+  }
+
   return (
     <div
-  className={clsx(
-    "relative top-0 left-0 h-full z-50 transition-all duration-300 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg",
-    isOpen ? "w-[300px]" : "w-10"
-  )}
->
+      className={clsx(
+        "h-full z-40 transition-all duration-300 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-lg",
+        "absolute md:relative left-0 top-0",
+        isOpen
+          ? "w-full max-w-[300px] md:w-[300px] opacity-100 visible"
+          : "w-0 md:w-10 opacity-0 md:opacity-100 md:visible invisible"
+      )}
+    >
 
       {isOpen ? (
         <div className="h-full flex flex-col p-4">
@@ -90,6 +107,7 @@ const filteredFunctions = FUNCTION_META
                     className="cursor-grab active:cursor-grabbing hover:shadow-md transition-all duration-200 hover:scale-[1.02] dark:bg-gray-700 dark:border-gray-600"
                     draggable
                     onDragStart={(event) => onDragStart(event, func)}
+                    onClick={() => handleCardClick(func)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-center gap-3">

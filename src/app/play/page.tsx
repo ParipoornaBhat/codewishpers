@@ -22,7 +22,7 @@ interface Worksheet {
 export default function CodeWhispersApp() {
   
 
-const { autoSave, setAutoSave, showTestPanel, setShowTestPanel, isLibFunctionsOpen, QuestionCardOpen } = usePlaySettings();
+const { autoSave, setAutoSave, showTestPanel, setShowTestPanel, isLibFunctionsOpen, setIsLibFunctionsOpen, QuestionCardOpen, setQuestionCardOpen } = usePlaySettings();
   const [worksheets, setWorksheets] = useState<Worksheet[]>([])
 
   const [activeWorksheet, setActiveWorksheet] = useState<string | null>(null)
@@ -142,31 +142,16 @@ const removeWorksheet = (id: string) => {
 
 
   return (
-    <div className="h-[calc(100vh-100px)] sm:h-[calc(100vh-80px)] lg:h-[calc(100vh-64px)] flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-950">
+    <div className="h-[calc(100vh-100px)] sm:h-[calc(100vh-80px)] lg:h-[calc(100vh-64px)] flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-950 relative overflow-hidden">
       {/* Header */}
 
-      <div className="flex-1 flex">
-        {/* Function Library Sidebar & Question Card */}
-        <div
-          className={clsx(
-            "relative top-0 left-0 h-[calc(100vh-70px)] z-50 transition-all duration-300 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg",
-            QuestionCardOpen ? "w-[500px]" : "w-10"
-          )}
-        >
-          <QuestionCard />
-        </div>
-        <div
-          className={clsx(
-    "relative top-0 left-0 h-[calc(100vh-70px)] z-50 transition-all duration-300 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg",
-    isLibFunctionsOpen ? "w-[300px]" : "w-10"
-  )}
->
-      <FunctionLibrary />
-    </div>
-
+      <div className="flex-1 flex relative overflow-hidden">
+        {/* Sidebar panels (rendered directly; they contain their own wrappers) */}
+        <QuestionCard />
+        <FunctionLibrary />
 
         {/* Main Canvas Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Worksheet Tabs */}
           {activeWorksheet && (
           <Tabs value={activeWorksheet} onValueChange={setActiveWorksheet} className="flex-1 flex flex-col">
@@ -221,13 +206,68 @@ const removeWorksheet = (id: string) => {
           </Tabs>
           )}
         </div>
+        
         {/* Test Panel */}
         {showTestPanel && (
-  <div className="absolute right-0 top-[70px] z-[9998] w-96 h-[calc(100vh-70px)] bg-white dark:bg-gray-800 border-l dark:border-gray-700 shadow-lg">
-    <TestPanel worksheet={currentWorksheet} onClose={() => setShowTestPanel(false)} />
-  </div>
-)}
+          <div className="absolute right-0 top-0 z-[9998] w-full sm:w-96 h-full bg-white dark:bg-gray-800 border-l dark:border-gray-700 shadow-lg transition-all duration-300">
+            <TestPanel worksheet={currentWorksheet} onClose={() => setShowTestPanel(false)} />
+          </div>
+        )}
+      </div>
 
+      {/* Mobile Floating Control Bar */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[9999] flex items-center bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-gray-200 dark:border-gray-800 px-4 py-2 rounded-full shadow-2xl gap-2 md:hidden">
+        <Button
+          size="sm"
+          variant={QuestionCardOpen ? "default" : "ghost"}
+          onClick={() => {
+            setQuestionCardOpen(!QuestionCardOpen);
+            if (!QuestionCardOpen) {
+              setIsLibFunctionsOpen(false);
+              setShowTestPanel(false);
+            }
+          }}
+          className={clsx(
+            "rounded-full flex items-center gap-1.5 px-3",
+            QuestionCardOpen && "bg-purple-600 hover:bg-purple-700 text-white"
+          )}
+        >
+          <span className="text-xs font-semibold">📖 Question</span>
+        </Button>
+        <Button
+          size="sm"
+          variant={isLibFunctionsOpen ? "default" : "ghost"}
+          onClick={() => {
+            setIsLibFunctionsOpen(!isLibFunctionsOpen);
+            if (!isLibFunctionsOpen) {
+              setQuestionCardOpen(false);
+              setShowTestPanel(false);
+            }
+          }}
+          className={clsx(
+            "rounded-full flex items-center gap-1.5 px-3",
+            isLibFunctionsOpen && "bg-purple-600 hover:bg-purple-700 text-white"
+          )}
+        >
+          <span className="text-xs font-semibold">🧱 Library</span>
+        </Button>
+        <Button
+          size="sm"
+          variant={showTestPanel ? "default" : "ghost"}
+          onClick={() => {
+            setShowTestPanel(!showTestPanel);
+            if (!showTestPanel) {
+              setQuestionCardOpen(false);
+              setIsLibFunctionsOpen(false);
+            }
+          }}
+          className={clsx(
+            "rounded-full flex items-center gap-1.5 px-3",
+            showTestPanel && "bg-purple-600 hover:bg-purple-700 text-white"
+          )}
+        >
+          <span className="text-xs font-semibold">🧪 Test</span>
+        </Button>
       </div>
     </div>
   )

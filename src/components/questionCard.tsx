@@ -477,8 +477,11 @@ const filteredSubmissions = useMemo(
   return (
     <div
       className={clsx(
-        "relative top-0 left-0 h-full z-50 transition-all duration-300 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-lg overflow-y-hidden",
-        isOpen ? "w-[520px]" : "w-10"
+        "h-full z-50 transition-all duration-300 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-lg overflow-y-hidden",
+        "absolute md:relative left-0 top-0",
+        isOpen
+          ? "w-full max-w-[500px] md:w-[500px] opacity-100 visible"
+          : "w-0 md:w-10 opacity-0 md:opacity-100 md:visible invisible"
       )}
     >
       {isOpen ? (
