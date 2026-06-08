@@ -11,8 +11,7 @@ import { Toaster } from "sonner";
 import { FlashToast } from "@/app/_components/Flash-error";
 export default function RootLayout({
   children,
-  session, // Receiving session prop
-}: Readonly<{ children: React.ReactNode, session: any }>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     
      <html lang="en" suppressHydrationWarning>
